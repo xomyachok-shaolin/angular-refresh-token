@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import {BrowserAnimationsModule, provideAnimations} from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms'; 
-import {tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule} from '@taiga-ui/core';
+import {tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule} from '@taiga-ui/core';
 import {NgDompurifySanitizer} from '@tinkoff/ng-dompurify';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +20,7 @@ import { BoardUserComponent } from './board-user/board-user.component';
 import { httpInterceptorProviders } from './_helpers/http.interceptor';
 
 import { TuiRootModule, TuiDialogModule, TuiAlertModule, TuiSvgModule } from '@taiga-ui/core';
-import { TuiInputModule, TuiCheckboxModule, TuiCheckboxLabeledModule, TuiInputPasswordModule } from '@taiga-ui/kit';
+import { TuiInputModule, TuiCheckboxModule, TuiCheckboxLabeledModule, TuiInputPasswordModule, TuiTabsModule } from '@taiga-ui/kit';
 
 @NgModule({
   declarations: [
@@ -47,6 +47,9 @@ import { TuiInputModule, TuiCheckboxModule, TuiCheckboxLabeledModule, TuiInputPa
     TuiDialogModule,
     TuiAlertModule,
     TuiInputModule,
+    TuiTextfieldControllerModule,
+    TuiHintModule,
+    TuiTabsModule,
     TuiInputPasswordModule,
     TuiCheckboxModule,
     ReactiveFormsModule

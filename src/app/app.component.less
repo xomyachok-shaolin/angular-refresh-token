@@ -1,1 +1,30 @@
 @import '@taiga-ui/core/styles/taiga-ui-local.less';
+
+.custom-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; // Distributes space between items
+    padding: 16px 20px;
+  
+    .logo-img {
+      width: 136px; // Adjust size as needed
+      height: 64px;
+      margin-right: 24px; // Space between logo and label
+    }
+  
+    tui-input {
+      width: 225px;
+      margin-left: auto;
+      margin-right: 24px;
+    }
+
+    .icon-profile {
+        width: 24px;
+        height: 24px;
+      }
+      
+  
+    tui-tabs {
+      // No additional style needed unless specific customization is required
+    }
+  }

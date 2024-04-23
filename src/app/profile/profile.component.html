@@ -1,18 +1,22 @@
-<div *ngIf="currentUser; else loginPrompt" class="container">
-  <header class="jumbotron">
-    <h3>
-      <strong>{{ currentUser.username }}</strong> Profile
-    </h3>
-  </header>
-  <p>
-    <strong>Email:</strong>
-    {{ currentUser.email }}
-  </p>
-  <strong>Roles:</strong>
-  <ul>
-    <li *ngFor="let role of currentUser.roles">{{ role }}</li>
-  </ul>
-</div>
+<!-- <div *ngIf="currentUser; else loginPrompt" class="container"> -->
+  <tui-root>
+    <div class="sidebar">
+      <tui-tabs vertical="left">
+        <button tuiTab>Личный кабинет</button>
+        <button tuiTab>Заказы</button>
+        <!-- Add more tabs as needed -->
+      </tui-tabs>
+    </div>
+  
+    <div class="content">
+      <!-- Your container content goes here -->
+      <router-outlet></router-outlet>
+  
+      <ng-template #loginPrompt>
+        <p>Please login.</p>
+      </ng-template>
+    </div>
+  </tui-root>
 
 <ng-template #loginPrompt>
   <p>Please login.</p>

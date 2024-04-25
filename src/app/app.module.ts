@@ -20,7 +20,12 @@ import { BoardUserComponent } from './board-user/board-user.component';
 import { httpInterceptorProviders } from './_helpers/http.interceptor';
 
 import { TuiRootModule, TuiDialogModule, TuiAlertModule, TuiSvgModule } from '@taiga-ui/core';
-import { TuiInputModule, TuiCheckboxModule, TuiCheckboxLabeledModule, TuiInputPasswordModule, TuiTabsModule } from '@taiga-ui/kit';
+import { TuiInputModule, TuiCheckboxModule, 
+  TuiCheckboxLabeledModule, TuiInputPasswordModule,
+  TuiTabsModule, TuiBadgedContentModule, 
+  TuiBadgeModule,
+  TuiAvatarModule} from '@taiga-ui/kit';
+import {TuiTabBarModule} from '@taiga-ui/addon-mobile';
 
 @NgModule({
   declarations: [
@@ -45,11 +50,15 @@ import { TuiInputModule, TuiCheckboxModule, TuiCheckboxLabeledModule, TuiInputPa
     TuiRootModule,
     TuiButtonModule,
     TuiDialogModule,
+    TuiBadgeModule,
+    TuiAvatarModule,
     TuiAlertModule,
     TuiInputModule,
     TuiTextfieldControllerModule,
     TuiHintModule,
     TuiTabsModule,
+    TuiBadgedContentModule,
+    TuiTabBarModule,
     TuiInputPasswordModule,
     TuiCheckboxModule,
     ReactiveFormsModule

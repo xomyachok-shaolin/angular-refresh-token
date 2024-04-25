@@ -1,8 +1,0 @@
-.sidebar {
-    width: 200px; /* or your preferred width */
-    float: left; /* Aligns the sidebar to the left */
-  }
-  
-  .content {
-    margin-left: 200px; /* Should match the sidebar width */
-  }

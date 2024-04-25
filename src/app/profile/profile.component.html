@@ -1,12 +1,23 @@
 <!-- <div *ngIf="currentUser; else loginPrompt" class="container"> -->
   <tui-root>
     <div class="sidebar">
-      <tui-tabs vertical="left">
-        <button tuiTab>Личный кабинет</button>
-        <button tuiTab>Заказы</button>
+      <tui-tabs vertical="left"> 
+        <button tuiTab>
+          <tui-svg
+              src="tuiIconMonitorLarge"
+              class="tui-space_right-2"
+          ></tui-svg>
+          Личный кабинет
+        </button>
+        <button tuiTab>
+        <tui-svg
+        src="tuiIconBriefcaseLarge"
+        class="tui-space_right-2"
+    ></tui-svg>
+    Заказы</button>
         <!-- Add more tabs as needed -->
-      </tui-tabs>
-    </div>
+        </tui-tabs>
+      </div>
   
     <div class="content">
       <!-- Your container content goes here -->

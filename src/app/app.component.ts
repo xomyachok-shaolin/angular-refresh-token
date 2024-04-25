@@ -11,6 +11,8 @@ import { EventBusService } from './_shared/event-bus.service';
 })
 export class AppComponent {
   private roles: string[] = [];
+
+  activeItemIndex = 1;
   isLoggedIn = false;
   showAdminBoard = false;
   showModeratorBoard = false;

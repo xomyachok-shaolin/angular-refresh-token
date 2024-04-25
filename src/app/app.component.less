@@ -1,30 +1,50 @@
 @import '@taiga-ui/core/styles/taiga-ui-local.less';
 
 .custom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+  .left-section {
     display: flex;
     align-items: center;
-    justify-content: space-between; // Distributes space between items
-    padding: 16px 20px;
-  
-    .logo-img {
-      width: 136px; // Adjust size as needed
-      height: 64px;
-      margin-right: 24px; // Space between logo and label
-    }
-  
-    tui-input {
-      width: 225px;
-      margin-left: auto;
-      margin-right: 24px;
-    }
-
-    .icon-profile {
-        width: 24px;
-        height: 24px;
-      }
-      
-  
-    tui-tabs {
-      // No additional style needed unless specific customization is required
-    }
   }
+
+  .logo-img {
+    width: 136px; 
+    height: 64px;
+    margin-right: 24px; 
+  }
+
+  .right-section {
+    display: flex;
+    align-items: center;
+    gap: 24px; 
+  }
+
+  tui-input {
+    width: 225px;
+    margin-left: auto;
+    // margin-right: 24px;
+  }
+
+  ::ng-deep tui-tabs .t-underline {
+    position: absolute;
+    bottom: 0;
+    margin-left: 6px;
+    width: 12px !important;
+  }
+
+  tui-svg {
+    color: #526ED3;
+  }
+
+  tui-tabs {
+    box-shadow: none !important;
+    position: relative;
+    height: 64px;
+    // margin-bottom: -5px;
+  }
+}

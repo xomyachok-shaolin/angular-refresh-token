@@ -1,28 +1,31 @@
 <tui-root>
   <div class="custom-header">
-    <img src="assets/Logo.svg" class="logo-img">
-    <tui-input tuiTextfield 
-    tuiTextfieldSize="s" [tuiTextfieldCleaner]="true">
-      <input type="text" tuiTextfield title="Gj" placeholder="Поиск...">
-      <tui-svg src="tuiIconSearch" tuiTextfieldPrefix></tui-svg>
-    </tui-input>
-    <tui-tabs>
-      <a tuiTab routerLink="/home" routerLinkActive="active">
-        <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
-      </a>
-      <a tuiTab badge="3" routerLink="/home" routerLinkActive="active">
-        <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
-      </a>
-      <a tuiTab routerLink="/home" routerLinkActive="active">
-        <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
-      </a>
-       <a *ngIf="showAdminBoard" tuiTab routerLink="/admin" routerLinkActive="active">Admin</a>
-      <a *ngIf="showModeratorBoard" tuiTab routerLink="/mod" routerLinkActive="active">Moderator</a>
-    </tui-tabs>
+    <div class="left-section">
+      <img src="assets/Logo.svg" class="logo-img">
+    </div>
+    <div class="right-section">
+      <tui-input tuiTextfield tuiTextfieldIconLeft="tuiIconSearch" tuiTextfieldSize="s" [tuiTextfieldCleaner]="true">
+        <input type="text" tuiTextfield title="Gj" placeholder="Поиск...">
+        Поиск
+      </tui-input>
+      <tui-tabs>
+        <a tuiTab routerLink="/profile" routerLinkActive="active">
+          <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
+        </a>
+        <a tuiTab routerLink="/home" routerLinkActive="active">
+          <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
+        </a>
+        <a tuiTab routerLink="/login" routerLinkActive="active">
+          <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
+        </a>
+        <a *ngIf="showAdminBoard" tuiTab routerLink="/admin" routerLinkActive="active">Admin</a>
+        <a *ngIf="showModeratorBoard" tuiTab routerLink="/mod" routerLinkActive="active">Moderator</a>
+      </tui-tabs>
+    </div>
   </div>
 
   <!-- Main content area -->
   <div class="content">
     <router-outlet></router-outlet>
   </div>
-</tui-root>
+  </tui-root>

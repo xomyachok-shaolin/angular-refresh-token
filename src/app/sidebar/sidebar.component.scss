@@ -1,17 +1,20 @@
 .main {
-    display: flex;
-    flex-direction: row; /* Stack header and main container vertically */
-    width: 100%;
-    height: 95vh;
-    background: #F6F6F6;
-  }
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 95vh;
+  background: #F6F6F6;
+  z-index: 0;
+}
 
-  
+
 .sidebar {
-    width: 200px; 
-    background: #F6F6F6;
-    padding-top: 32px;
-    padding-left: 16px;
+  width: 200px;
+  padding-top: 22px;
+  padding-left: 16px;
+  background: #F6F6F6;
+  margin-right: 22px;
+  transition: transform 0.3s ease, width 0.3s ease;
 }
 
 
@@ -19,54 +22,89 @@
   border: 1px solid #F6F6F6;
   border-radius: 16px;
   background: #FFFFFF;
-    flex-grow: 1; /* Контент займет всё оставшееся пространство */
-    margin: 32px; /* Отступы внутри контейнера контента */
-    padding: 32px;
-    padding-top: 16px;
-    margin-bottom: 81px;
+  /* Контент займет всё оставшееся пространство */
+  flex-grow: 1;
+  margin: 32px;
+  margin-top: 22px;
+  padding: 32px;
+  padding-top: 16px;
+  margin-bottom: 81px;
 }
-  
-  
+
+
+button {
+  // padding-right: 12px;
+  justify-content: flex-start;
+  align-items: center;
+  border-radius: 8px;
+  min-width: 220px;
+  height: 44px;
+}
+
+button._active {
+  color: #000;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+button:hover {
+  color: #000;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+button::after {
+  display: none;
+}
+
+tui-svg {
+  margin-left: 12px;
+}
+
+tui-tabs {
+  box-shadow: none;
+}
+
+.left {
+  margin-right: 2rem;
+  min-width: 10rem;
+  width: 10rem;
+}
+
+.right {
+  margin-left: 2rem;
+  min-width: 10rem;
+  width: 10rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100px;
+    // transform: translateY(-10px); /* Hide sidebar off-canvas */
+  }
+
+  .custom-header, .content {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .logo-img {
+    width: 100px; /* Smaller logo on smaller screens */
+    height: 48px;
+  }
+
+  tui-input {
+    width: 100%; /* Full width on small screens */
+  }
+
+  .right-section {
+    flex-direction: column; /* Stack elements vertically */
+    gap: 10px;
+  }
+
+  .main {
+    flex-direction: column; /* Stack sidebar and content vertically */
+  }
+
   button {
-    // padding-right: 12px;
-    justify-content: flex-start;
-    align-items: center; 
-    border-radius: 8px;
-    width: 220px;
-    height: 44px;
+    width: 100%; /* Full width buttons in sidebar */
   }
-  
-  button._active {
-    color: #000;
-    background: rgba(0, 0, 0, 0.04);
-  }
-  
-  button:hover {
-    color: #000;
-    background: rgba(0, 0, 0, 0.08);
-  }
-  
-  button::after {
-    display: none;
-  }
-  
-  tui-svg {
-    margin-left: 12px;
-  }
-  
-  tui-tabs  {
-  
-    box-shadow: none;
-  }
-  
-  .left {
-    margin-right: 2rem;
-    min-width: 10rem;
-    width: 10rem;
-  }
-  
-  .right {
-    margin-left: 2rem;
-    min-width: 10rem;
-    width: 10rem;
-  }
+}

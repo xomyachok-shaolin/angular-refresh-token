@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { OrderService } from '../order.service'; // Убедитесь, что сервис правильно импортирован
 import { Order } from '../order.model';
+import { FormControl } from '@angular/forms';
 
 @Component({
   selector: 'app-active',
@@ -11,6 +12,7 @@ export class ActiveComponent {
   orders: Order[] = []; 
   totalPages: number = 10;
   currentPage: number = 1;
+  testValue = new FormControl(false);
 
   constructor(private orderService: OrderService) {}
 

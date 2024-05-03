@@ -1,30 +1,29 @@
 <div class="order-table">
-    <table tui-table>
-      <thead>
-        <tr>
-          <th tuiTh>Номер</th>
-          <th tuiTh>Тип</th>
-          <th tuiTh>Дата оформления</th>
-          <th tuiTh>Статус выполнения</th>
-          <th tuiTh>Стоимость</th>
-          <th tuiTh>Статус оплаты</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr tuiTr *ngFor="let order of orders">
-          <td tuiTd>{{ order.number }}</td>
-          <td tuiTd>{{ order.type }}</td>
-          <td tuiTd>{{ order.date | date:'mediumDate' }}</td>
-          <td tuiTd>{{ order.status }}</td>
-          <td tuiTd>{{ order.cost | currency:'RUB' }}</td>
-          <td tuiTd>{{ order.paymentStatus }}</td>
-        </tr>
-      </tbody>
+    <table class="tui-table">
+
+        <tbody>
+            <tr class="tui-table__tr tui-table__tr_border_none">
+                <th class="tui-table__th tui-table__th_first">
+                    <tui-checkbox [formControl]="testValue"></tui-checkbox>
+                </th>
+                <th class="tui-table__th tui-table__th_first">Номер</th>
+                <th class="tui-table__th">Тип</th>
+                <th class="tui-table__th">Дата оформления</th>
+                <th class="tui-table__th">Статус выполнения</th>
+                <th class="tui-table__th tui-table__th_last">Стоимость, статус оплаты</th>
+            </tr>
+            <tr tui-table__tr tui-table__tr_border_none *ngFor="let order of orders">
+                <td class="tui-table__td tui-table__td_first"></td>
+                <td class="tui-table__td">{{ order.number }}</td>
+                <td class="tui-table__td">{{ order.type }}</td>
+                <td class="tui-table__td">{{ order.date | date:'mediumDate' }}</td>
+                <td class="tui-table__td">{{ order.status }}</td>
+                <td class="tui-table__td tui-table__td_last">
+                    <div>{{ order.cost | currency:'RUB' }}</div>
+                    <div>{{ order.paymentStatus }}</div>
+                </td>
+            </tr>
+        </tbody>
     </table>
-    <tui-pagination
-      [length]="totalPages"
-      [(ngModel)]="currentPage"
-      (indexChange)="fetchOrders()"
-    ></tui-pagination>
-  </div>
-  
+    <tui-pagination [length]="totalPages" [(ngModel)]="currentPage" (indexChange)="fetchOrders()"></tui-pagination>
+</div>

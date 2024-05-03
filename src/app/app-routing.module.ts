@@ -8,6 +8,13 @@ import { ProfileComponent } from './profile/profile.component';
 import { BoardUserComponent } from './board-user/board-user.component';
 import { BoardModeratorComponent } from './board-moderator/board-moderator.component';
 import { BoardAdminComponent } from './board-admin/board-admin.component';
+import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
+import { MainComponent } from './personal-cabinet/main/main.component';
+import { AdditionalComponent } from './personal-cabinet/additional/additional.component';
+import { NotificationsComponent } from './personal-cabinet/notifications/notifications.component';
+import { OrdersComponent } from './orders/orders.component';
+import { ActiveComponent } from './orders/active/active.component';
+import { ArchivedComponent } from './orders/archived/archived.component';
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
@@ -17,6 +24,19 @@ const routes: Routes = [
   { path: 'user', component: BoardUserComponent },
   { path: 'mod', component: BoardModeratorComponent },
   { path: 'admin', component: BoardAdminComponent },
+  { path: 'personal-cabinet', component: PersonalCabinetComponent, children: [
+    { path: 'main', component: MainComponent },
+    { path: 'additional', component: AdditionalComponent },
+    { path: 'notifications', component: NotificationsComponent },
+    { path: '', redirectTo: 'main', pathMatch: 'full' }
+  ]
+},
+{ path: 'orders', component: OrdersComponent, children: [
+    { path: 'active', component: ActiveComponent },
+    { path: 'archived', component: ArchivedComponent },
+    { path: '', redirectTo: 'active', pathMatch: 'full' }
+  ]
+},
   { path: '', redirectTo: 'home', pathMatch: 'full' }
 ];
 

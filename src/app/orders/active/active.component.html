@@ -1,0 +1,30 @@
+<div class="order-table">
+    <table tui-table>
+      <thead>
+        <tr>
+          <th tuiTh>Номер</th>
+          <th tuiTh>Тип</th>
+          <th tuiTh>Дата оформления</th>
+          <th tuiTh>Статус выполнения</th>
+          <th tuiTh>Стоимость</th>
+          <th tuiTh>Статус оплаты</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr tuiTr *ngFor="let order of orders">
+          <td tuiTd>{{ order.number }}</td>
+          <td tuiTd>{{ order.type }}</td>
+          <td tuiTd>{{ order.date | date:'mediumDate' }}</td>
+          <td tuiTd>{{ order.status }}</td>
+          <td tuiTd>{{ order.cost | currency:'RUB' }}</td>
+          <td tuiTd>{{ order.paymentStatus }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <tui-pagination
+      [length]="totalPages"
+      [(ngModel)]="currentPage"
+      (indexChange)="fetchOrders()"
+    ></tui-pagination>
+  </div>
+  

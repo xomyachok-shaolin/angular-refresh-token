@@ -1,0 +1,19 @@
+<div class="main">
+  <div *ngIf="!isLoginRoute" class="sidebar">
+      <tui-tabs vertical="left">
+        <button tuiTab routerLink="/personal-cabinet" routerLinkActive="_active">
+          <tui-svg src="tuiIconMonitorLarge" class="tui-space_right-2"></tui-svg>
+          Личный кабинет
+        </button>
+        <button tuiTab routerLink="/orders" routerLinkActive="_active">
+          <tui-svg src="tuiIconBriefcaseLarge" class="tui-space_right-2"></tui-svg>
+          Заказы
+        </button>
+      </tui-tabs>
+    </div>
+  
+    <div class="content">
+      <router-outlet></router-outlet>
+    </div>
+</div>
+  

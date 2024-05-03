@@ -9,13 +9,13 @@
         Поиск
       </tui-input>
       <tui-tabs>
-        <a tuiTab routerLink="/profile" routerLinkActive="active">
+        <a tuiTab routerLink="/orders" routerLinkActive="active">
           <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
         </a>
-        <a tuiTab routerLink="/home" routerLinkActive="active">
+        <a tuiTab routerLink="/login" routerLinkActive="active">
           <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
         </a>
-        <a tuiTab routerLink="/login" routerLinkActive="active">
+        <a tuiTab routerLink="/personal-cabinet" routerLinkActive="active">
           <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
         </a>
         <a *ngIf="showAdminBoard" tuiTab routerLink="/admin" routerLinkActive="active">Admin</a>
@@ -26,6 +26,7 @@
 
   <!-- Main content area -->
   <div class="content">
-    <router-outlet></router-outlet>
-  </div>
+    <app-sidebar></app-sidebar>
+
+</div>
   </tui-root>

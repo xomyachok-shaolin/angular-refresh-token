@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
-import {BrowserAnimationsModule, provideAnimations} from '@angular/platform-browser/animations';
-import { ReactiveFormsModule } from '@angular/forms'; 
-import {tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule} from '@taiga-ui/core';
-import {NgDompurifySanitizer} from '@tinkoff/ng-dompurify';
+import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
+import { ReactiveFormsModule } from '@angular/forms';
+import { tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule } from '@taiga-ui/core';
+import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -20,12 +20,23 @@ import { BoardUserComponent } from './board-user/board-user.component';
 import { httpInterceptorProviders } from './_helpers/http.interceptor';
 
 import { TuiRootModule, TuiDialogModule, TuiAlertModule, TuiSvgModule } from '@taiga-ui/core';
-import { TuiInputModule, TuiCheckboxModule, 
+import {
+  TuiInputModule, TuiCheckboxModule,
   TuiCheckboxLabeledModule, TuiInputPasswordModule,
-  TuiTabsModule, TuiBadgedContentModule, 
-  TuiBadgeModule,
-  TuiAvatarModule} from '@taiga-ui/kit';
-import {TuiTabBarModule} from '@taiga-ui/addon-mobile';
+  TuiTabsModule, TuiBadgedContentModule,
+  TuiBadgeModule, TuiAvatarModule,
+  TuiPaginationModule
+} from '@taiga-ui/kit';
+import { TuiTabBarModule } from '@taiga-ui/addon-mobile';
+import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
+import { OrdersComponent } from './orders/orders.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { MainComponent } from './personal-cabinet/main/main.component';
+import { AdditionalComponent } from './personal-cabinet/additional/additional.component';
+import { NotificationsComponent } from './personal-cabinet/notifications/notifications.component';
+import { ActiveComponent } from './orders/active/active.component';
+import { ArchivedComponent } from './orders/archived/archived.component';
+import { OrderService } from './orders/order.service';
 
 @NgModule({
   declarations: [
@@ -36,15 +47,24 @@ import {TuiTabBarModule} from '@taiga-ui/addon-mobile';
     ProfileComponent,
     BoardAdminComponent,
     BoardModeratorComponent,
-    BoardUserComponent
+    BoardUserComponent,
+    PersonalCabinetComponent,
+    OrdersComponent,
+    SidebarComponent,
+    MainComponent,
+    AdditionalComponent,
+    NotificationsComponent,
+    ActiveComponent,
+    ArchivedComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FormsModule,
     HttpClientModule,
-    BrowserAnimationsModule, 
+    BrowserAnimationsModule,
     TuiCheckboxLabeledModule,
+    TuiPaginationModule,
     TuiSvgModule,
     TuiSvgDefsHostModule,
     TuiRootModule,
@@ -63,7 +83,9 @@ import {TuiTabBarModule} from '@taiga-ui/addon-mobile';
     TuiCheckboxModule,
     ReactiveFormsModule
   ],
-  providers: [httpInterceptorProviders,
+  providers: [
+    OrderService,
+    httpInterceptorProviders,
     provideAnimations(),
     tuiSvgOptionsProvider({
       path: 'https://taiga-ui.dev/assets/taiga-ui/icons',

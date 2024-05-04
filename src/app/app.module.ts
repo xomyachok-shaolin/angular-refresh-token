@@ -19,7 +19,7 @@ import { BoardUserComponent } from './board-user/board-user.component';
 
 import { httpInterceptorProviders } from './_helpers/http.interceptor';
 
-import { TuiRootModule, TuiDialogModule, TuiAlertModule, TuiSvgModule } from '@taiga-ui/core';
+import { TuiRootModule, TuiDialogModule, TuiAlertModule, TuiSvgModule, TuiScrollbarModule } from '@taiga-ui/core';
 import {
   TuiInputModule, TuiCheckboxModule,
   TuiCheckboxLabeledModule, TuiInputPasswordModule,
@@ -37,6 +37,7 @@ import { NotificationsComponent } from './personal-cabinet/notifications/notific
 import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
 import { OrderService } from './orders/order.service';
+import { TuiTableModule } from '@taiga-ui/addon-table';
 
 @NgModule({
   declarations: [
@@ -66,6 +67,8 @@ import { OrderService } from './orders/order.service';
     TuiCheckboxLabeledModule,
     TuiPaginationModule,
     TuiSvgModule,
+    TuiScrollbarModule,
+    TuiTableModule,
     TuiSvgDefsHostModule,
     TuiRootModule,
     TuiButtonModule,

@@ -9,6 +9,7 @@ import { FormControl } from '@angular/forms';
   styleUrls: ['./active.component.scss']
 })
 export class ActiveComponent {
+  readonly columns = ['Номер', 'Тип', 'Дата оформления', 'Статус выполнения', 'Стоимость, статус оплаты'] as const;
   orders: Order[] = []; 
   totalPages: number = 10;
   currentPage: number = 1;

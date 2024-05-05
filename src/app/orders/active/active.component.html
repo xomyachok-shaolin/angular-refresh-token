@@ -2,8 +2,8 @@
     <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
         <table size="l" tuiTable [columns]="columns" [direction]="-1">
 
-            <tbody>
-                <tr class="tui-table__tr tui-table__tr_border_none ">
+            <tbody tuiTbody>
+                <tr tuiThGroup class="tui-table__tr ">
                     <th class="tui-table__th tui-table__th_first">
                         <tui-checkbox [formControl]="testValue"></tui-checkbox>
                     </th>
@@ -11,18 +11,57 @@
                     <th class="tui-table__th">Тип</th>
                     <th class="tui-table__th">Дата оформления</th>
                     <th class="tui-table__th">Статус выполнения</th>
+
                     <th class="tui-table__th tui-table__th_last">Стоимость, статус оплаты</th>
+
+                    <th class="tui-table__th" *tuiHead="'actions'"></th>
                 </tr>
-                <tr tui-table__tr tui-table__tr_border_none *ngFor="let order of orders">
-                    <td class="tui-table__td tui-table__td_first"></td>
-                    <td class="tui-table__td">{{ order.status }}</td>
-                    <td class="tui-table__td tui-table__td_last">
-                        <div>{{ order.cost | currency:'RUB' }}</div>
+                <tr tui-table__tr *ngFor="let order of orders">
+                    <td class="tui-table__td tui-table__td_first">
+                        <tui-checkbox [formControl]="testValue"></tui-checkbox>
+                    </td>
+                    <td class="tui-table__td">{{ order.number }}</td>
+                    <td class="tui-table__td">
+                        <ul>
+                            <li *ngFor="let type of order.types">{{ type }}</li>
+                        </ul>
+                    </td>
+                    <td class="tui-table__td">{{ order.date | date:'mediumDate' }}</td>
+                    <td class="tui-table__td">
+                        <div [class]="{'completed': order.status === 'Выполнено',
+                         'processing': order.status === 'В обработке', 
+                         'denied': order.status === 'Отказано'}">{{ order.status }}</div>
+                    </td>
+                    <td class="tui-table__td">
+                        <div>{{ order.cost + ' ₽' }}</div>
                         <div>{{ order.paymentStatus }}</div>
+                    </td>
+                    <td>
+                        <button appearance="flat" icon="tuiIconTrash" shape="rounded" size="s" title="Remove"
+                            tuiIconButton type="button" class="remove"></button>
+                    </td>
+                    <td>
+                        <tui-hosted-dropdown topRight [content]="menuContent">
+                            <button appearance="flat" icon="tuiIconMoreVerticalLarge" shape="rounded" size="s"
+                                title="More Actions" tuiDropdownSelection tuiDropdownSelectionPosition="selection"
+                                tuiIconButton type="button" (click)="onClick()"></button>
+
+
+                        </tui-hosted-dropdown>
+                        <ng-template #menuContent>
+
+                            <tui-data-list>
+                                <button tuiOption>Подробнее о заказе</button>
+                                <button tuiOption>Поместить в архив</button>
+                                <button tuiOption>Удалить заказ</button>
+                            </tui-data-list>
+
+                        </ng-template>
                     </td>
                 </tr>
             </tbody>
         </table>
         <tui-pagination [length]="totalPages" [(ngModel)]="currentPage" (indexChange)="fetchOrders()"></tui-pagination>
     </tui-scrollbar>
+
 </div>

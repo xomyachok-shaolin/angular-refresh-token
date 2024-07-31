@@ -1,10 +1,22 @@
+export interface Service {
+  uuid: string;
+  title: string;
+  parameters: any[];
+}
 export interface Order {
-    id: number;                  // Unique identifier for the order
-    number: string;              // Order number
-    types: string[];                // Type of the order
-    date: Date;                // Date of order placement
-    status: string;              // Current status of the order
-    cost: number;                // Total cost of the order
-    paymentStatus: string;       // Status of payment (e.g., 'Paid', 'Unpaid')
-  }
-  
+  uuid: string;
+  orderNumber: string;
+  contractNumber: string;
+  paymentStatus: string;
+  executionStatus: string;
+  execution: Date;
+  paymentDate: Date;
+  linkToGeoData: string;
+  passwordForLink: string;
+  comment: string;
+  cost: number;
+  client: string;
+  archived: boolean;
+  service: Service[] | null;
+  selected?: boolean;
+}

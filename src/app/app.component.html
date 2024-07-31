@@ -1,32 +1,61 @@
 <tui-root>
-  <div class="custom-header">
-    <div class="left-section">
-      <img src="assets/Logo.svg" class="logo-img">
+  <div *ngIf="!isServicesRoute">
+    <div class="custom-header">
+      <div class="left-section">
+        <img src="assets/Logo.svg" class="logo-img" />
+      </div>
+      <div class="center-section">
+        <tui-tabs class="menu1" [(activeItemIndex)]="index1">
+          <a tuiTab routerLink="/services" routerLinkActive="active"> Сервисы </a>
+          <a tuiTab routerLink="/products" routerLinkActive="active"> Продукты </a>
+          <a tuiTab routerLink="/contacts" routerLinkActive="active"> Контакты </a>
+        </tui-tabs>
+      </div>
+      <div class="right-section">
+        <form class="b-form" [formGroup]="searchForm">
+          <tui-input
+            tuiTextfield
+            tuiTextfieldIconLeft="tuiIconSearch"
+            tuiTextfieldSize="s"
+            [tuiTextfieldCleaner]="true"
+            formControlName="searchValue"
+          >
+            <input type="text" tuiTextfield placeholder="Поиск..." />
+            Поиск
+          </tui-input>
+        </form>
+        <tui-tabs class="menu2" [(activeItemIndex)]="index2">
+          <a tuiTab routerLink="/orders" routerLinkActive="active">
+            <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
+          </a>
+          <a tuiTab routerLink="/register" routerLinkActive="active">
+            <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
+          </a>
+          <tui-hosted-dropdown tuiDropdownHover [content]="content" [(open)]="open">
+            <a tuiTab routerLinkActive="active">
+              <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
+            </a>
+            <ng-template #content>
+              <tui-data-list size="s" (click)="onClick()">
+                <button routerLink="/personal-cabinet" tuiOption>Личный кабинет</button>
+                <button size="s" appearance="mono" tuiButton icon="tuiIconLogIn" routerLink="/login" *ngIf="!isLoggedIn">Вход</button>
+                <button size="s" appearance="mono" tuiButton icon="tuiIconLogOut" (click)="logout()" *ngIf="isLoggedIn">Выйти</button>
+              </tui-data-list>
+            </ng-template>
+          </tui-hosted-dropdown>
+          <!-- <a *ngIf="showAdminBoard" tuiTab routerLink="/admin" routerLinkActive="active">Admin</a>
+          <a *ngIf="showModeratorBoard" tuiTab routerLink="/mod" routerLinkActive="active">Moderator</a> -->
+        </tui-tabs>
+      </div>
     </div>
-    <div class="right-section">
-      <tui-input tuiTextfield tuiTextfieldIconLeft="tuiIconSearch" tuiTextfieldSize="s" [tuiTextfieldCleaner]="true">
-        <input type="text" tuiTextfield title="Gj" placeholder="Поиск...">
-        Поиск
-      </tui-input>
-      <tui-tabs>
-        <a tuiTab routerLink="/orders" routerLinkActive="active">
-          <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
-        </a>
-        <a tuiTab routerLink="/login" routerLinkActive="active">
-          <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
-        </a>
-        <a tuiTab routerLink="/personal-cabinet" routerLinkActive="active">
-          <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
-        </a>
-        <a *ngIf="showAdminBoard" tuiTab routerLink="/admin" routerLinkActive="active">Admin</a>
-        <a *ngIf="showModeratorBoard" tuiTab routerLink="/mod" routerLinkActive="active">Moderator</a>
-      </tui-tabs>
+    <!-- Sidebar for non-services routes -->
+    <div class="content">
+      <app-sidebar></app-sidebar>
+      <router-outlet></router-outlet>
     </div>
   </div>
-
-  <!-- Main content area -->
-  <div class="content">
-    <app-sidebar></app-sidebar>
-
-</div>
-  </tui-root>
+  <div *ngIf="isServicesRoute">
+    <!-- Services content for services route -->
+    <app-services></app-services>
+  </div>
+</tui-root>

@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms';
-import { tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule, TuiDropdownModule, TuiDataListModule, TuiHostedDropdownModule } from '@taiga-ui/core';
+import { tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule, TuiDropdownModule, TuiDataListModule, TuiHostedDropdownModule, TuiLoaderModule } from '@taiga-ui/core';
 import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,12 @@ import {
   TuiPaginationModule,
   TuiInputDateRangeModule,
   TuiSelectModule,
-  TuiMultiSelectModule
+  TuiMultiSelectModule,
+  TuiInputNumberModule,
+  TuiSelectOptionModule,
+  TuiAccordionModule,
+  TuiDataListWrapperModule,
+  TuiComboBoxModule
 } from '@taiga-ui/kit';
 import { TuiDropdownMobileModule, TuiTabBarModule } from '@taiga-ui/addon-mobile';
 import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
@@ -39,9 +44,10 @@ import { AdditionalComponent } from './personal-cabinet/additional/additional.co
 import { NotificationsComponent } from './personal-cabinet/notifications/notifications.component';
 import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
-import { OrderService } from './orders/order.service';
-import { TuiTableModule } from '@taiga-ui/addon-table';
+import { OrderService } from './_services/order.service';
+import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
 import { TuiDropdownHostModule } from '@taiga-ui/cdk';
+import { ServicesComponent } from './services/services.component';
 
 @NgModule({
   declarations: [
@@ -60,7 +66,8 @@ import { TuiDropdownHostModule } from '@taiga-ui/cdk';
     AdditionalComponent,
     NotificationsComponent,
     ActiveComponent,
-    ArchivedComponent
+    ArchivedComponent,
+    ServicesComponent
   ],
   imports: [
     BrowserModule,
@@ -68,6 +75,7 @@ import { TuiDropdownHostModule } from '@taiga-ui/cdk';
     FormsModule,
     HttpClientModule,
     BrowserAnimationsModule,
+    TuiAccordionModule,
     TuiCheckboxLabeledModule,
     TuiPaginationModule,
     TuiSvgModule,
@@ -76,6 +84,9 @@ import { TuiDropdownHostModule } from '@taiga-ui/cdk';
     TuiSvgDefsHostModule,
     TuiInputDateRangeModule,
     TuiSelectModule,
+    TuiSelectOptionModule,
+    TuiCheckboxModule,
+    TuiInputModule,
     TuiMultiSelectModule,
     TuiRootModule,
     TuiButtonModule,
@@ -83,7 +94,6 @@ import { TuiDropdownHostModule } from '@taiga-ui/cdk';
     TuiBadgeModule,
     TuiAvatarModule,
     TuiAlertModule,
-    TuiInputModule,
     TuiTextfieldControllerModule,
     TuiHintModule,
     TuiTabsModule,
@@ -94,8 +104,12 @@ import { TuiDropdownHostModule } from '@taiga-ui/cdk';
     TuiDropdownModule,
     TuiDropdownMobileModule,
     TuiDropdownHostModule,
+    TuiComboBoxModule,
     TuiDataListModule,
-    
+    TuiDataListWrapperModule,
+    TuiInputNumberModule,
+    TuiLoaderModule,
+    TuiTableFiltersModule,
     TuiHostedDropdownModule,
     ReactiveFormsModule
   ],

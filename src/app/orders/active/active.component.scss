@@ -1,14 +1,24 @@
 tui-pagination {
+    margin-top: 16px;
     display: flex;
 }
 
-
-.tui-table__tr {
-    border-bottom: 1px solid #e0e0e0; /* Light gray border for each row */
+.table {
+    width: 100%;
 }
 
-.tui-table__tr:last-child {
-    border-bottom: none; /* No border for the last row */
+td {
+    border-bottom: 1px solid #e0e0e0;
+    &:last-child {
+            padding-right: 5px;
+        }
+}
+
+th {
+    white-space: nowrap;
+    border-color: transparent;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem;
 }
 
 .menu {
@@ -71,4 +81,8 @@ tui-pagination {
         order: -1; /* Move search to the top */
         margin-bottom: 10px;
     }
+}
+
+.secondary-text {
+    color: #1B1F3BA6;
 }

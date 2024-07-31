@@ -1,1 +1,16 @@
-<p>main works!</p>
+<div class="company-header">
+  <tui-avatar
+    [text]="companyName"
+    [autoColor]="true"
+    size="m"
+  ></tui-avatar>
+  <div class="tui-text_body-m">{{ companyName }}</div>
+</div>
+<div class="tui-text_body-s">Руководитель компании - {{ directorName }}</div>
+<br />
+<div class="tui-text_body-s">Фактический адрес: {{ actualAddress }}</div>
+<div class="tui-text_body-s">Юридический адрес: {{ legalAddress }}</div>
+<div class="tui-text_body-s">Контакты: {{ contacts }}</div>
+<div class="tui-text_body-s">Почтовый индекс: {{ contacts }}</div>
+<div class="tui-text_body-s">Адрес электронной почты: {{ email }}</div>
+<div class="tui-text_body-s">Телефон: {{ phone }}</div>

@@ -1,5 +1,9 @@
 @import '@taiga-ui/core/styles/taiga-ui-local.less';
 
+tui-data-list {
+ align-items: start;
+}
+
 .custom-header {
   margin-bottom: 10px;
   display: flex;
@@ -10,9 +14,22 @@
   background: #ffffff;
   z-index: 10;
 
-  .left-section, .right-section {
+  .left-section {
+    flex: 0 0 auto;
+  }
+  
+  .center-section {
+    flex: 2;
+    text-align: center;
+    margin-right: 10px;
+  }
+  
+  .right-section {
+    flex: 2;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
   }
 
   .logo-img {
@@ -28,10 +45,10 @@
 
   tui-input {
     min-width: 225px;
-    margin-left: auto;
+    flex: 1;
   }
 
-  ::ng-deep tui-tabs .t-underline {
+  ::ng-deep .menu2 .t-underline {
     position: absolute;
     bottom: 0;
     margin-left: 6px;
@@ -45,7 +62,7 @@
   tui-tabs {
     box-shadow: none;
     position: relative;
-    height: 64px;
+    height: 68px;
   }
 }
 
@@ -68,12 +85,15 @@
     width: 100%;
     margin-top: 10px;
   }
-}
 
-@media (max-width: 768px) {
-  .logo-img {
+    .logo-img {
     width: 120px;
     height: 56px;
+    margin-right: 0 !important;
+  }
+
+  .center-section {
+    margin-right: 0 !important;
   }
 
   .right-section {
@@ -85,9 +105,5 @@
   width: 100%;
   padding: 20px;
   background: #F7F7F7;
-}
-
-/* Adding border to the sidebar for better visual separation */
-.sidebar {
   border-right: 1px solid #EDEDED;
 }

@@ -1,0 +1,20 @@
+.company-header {
+  display: flex;
+  align-items: center;
+  margin-top: 13px;
+  margin-bottom: 13px;
+
+  tui-avatar {
+  margin-right: 10px;
+  }
+
+  .tui-text_body-m {
+    margin: 0;
+    font-weight: bold;
+    line-height: 1.5;
+  }
+}
+
+.tui-text_body-s {
+  margin-bottom: 5px;
+}

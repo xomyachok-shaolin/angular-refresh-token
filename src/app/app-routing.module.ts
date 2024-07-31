@@ -15,6 +15,7 @@ import { NotificationsComponent } from './personal-cabinet/notifications/notific
 import { OrdersComponent } from './orders/orders.component';
 import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
+import { ServicesComponent } from './services/services.component';
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
@@ -22,6 +23,7 @@ const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'profile', component: ProfileComponent },
   { path: 'user', component: BoardUserComponent },
+  { path: 'services', component: ServicesComponent },
   { path: 'mod', component: BoardModeratorComponent },
   { path: 'admin', component: BoardAdminComponent },
   { path: 'personal-cabinet', component: PersonalCabinetComponent, children: [

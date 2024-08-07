@@ -1,59 +1,55 @@
 <tui-root>
-<div class="col-md-12">
-  <div class="card card-container">
-    <h2 tuiTextfield size="xl" class="text-header">Вход в личный кабинет</h2>
-    <div *ngIf="!isLoggedIn; else loggedInTemplate">
-      <form (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
-        <div class="form-group input-username">
-          <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel"
-          [tuiTextfieldCleaner]="true" 
-            [ngClass]="{'is-invalid': f.submitted && username.errors}">
-            E-mail или логин
-            <input tuiTextfield type="text" />
-          </tui-input>
-          <div *ngIf="username.errors && username.dirty" class="invalid-feedback">
-            <div *ngIf="username.errors['required']">Обязательно к заполнению!</div>
+  <div class="col-md-12">
+    <div class="card card-container">
+      <h2 tuiTextfield size="xl" class="text-header">Вход в личный кабинет</h2>
+      <div *ngIf="!isLoggedIn; else loggedInTemplate">
+        <form (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
+          <div class="form-group input-username">
+            <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel"
+            [tuiTextfieldCleaner]="true" 
+              [ngClass]="{'is-invalid': f.submitted && username.errors}">
+              E-mail или логин
+              <input tuiTextfield type="text" />
+            </tui-input>
+            <div *ngIf="username.errors && username.dirty" class="invalid-feedback">
+              <div *ngIf="username.errors['required']">Обязательно к заполнению!</div>
+            </div>
           </div>
-        </div>
 
-        <div class="form-group input-password">
-          <tui-input [(ngModel)]="form.password" name="password" required minlength="6" #password="ngModel"
-
-          [tuiTextfieldCleaner]="true" 
-          [tuiTextfieldCustomContent]="forgotContent"
-            [ngClass]="{'is-invalid': f.submitted && password.errors}">
-            <ng-template #forgotContent>
-              <!-- <a href="/forgot-password" class="tui-textfield__custom-content"> -->
+          <div class="form-group input-password">
+            <tui-input [(ngModel)]="form.password" name="password" required #password="ngModel"
+            [tuiTextfieldCleaner]="true" 
+            [tuiTextfieldCustomContent]="forgotContent"
+              [ngClass]="{'is-invalid': f.submitted && password.errors}">
+              <ng-template #forgotContent>
                 Забыли?
-              <!-- </a> -->
-            </ng-template>
-            Пароль
-            
-            <input 
-            tuiTextfield
-            type="password"
-             />
-          </tui-input>
-          <div *ngIf="password.errors && password.dirty" class="invalid-feedback">
-            <div *ngIf="password.errors['required']">Обязательно к заполнению!</div>
-            <div *ngIf="password.errors['minlength']">Пароль должен быть не менее 6 символов</div>
+              </ng-template>
+              Пароль
+              <input tuiTextfield type="password" />
+            </tui-input>
+            <div *ngIf="password.errors && password.dirty" class="invalid-feedback">
+              <div *ngIf="password.errors['required']">Обязательно к заполнению!</div>
+              <div *ngIf="password.errors['minlength']">Пароль должен быть не менее 6 символов</div>
+            </div>
           </div>
-        </div>
 
-        <tui-checkbox-labeled [(ngModel)]="form.isRemember" name="isRemember" [ngModelOptions]="{ standalone: true }">
-          Запомнить меня
-        </tui-checkbox-labeled>
+          <tui-checkbox-labeled [(ngModel)]="form.isRemember" name="isRemember" [ngModelOptions]="{ standalone: true }">
+            Запомнить меня
+          </tui-checkbox-labeled>
 
-        <button size="l" appearance="primary" tuiButton type="submit">
-          Вход
-        </button>
-      </form>
+          <button size="l" appearance="primary" tuiButton type="submit">
+            Вход
+          </button>
+        </form>
+      </div>
+
+      <ng-template #loggedInTemplate>
+        <div class="alert alert-success">Вошел как {{ roles }}.</div>
+      </ng-template>
+
+      <tui-notification *ngIf="showErrorNotification" status="error" [hasIcon]="false" (close)="onCloseNotification()">
+        {{ errorMessage }}
+      </tui-notification>
     </div>
-
-
-    <ng-template #loggedInTemplate>
-      <div class="alert alert-success">Вошел как {{ roles }}.</div>
-    </ng-template>
   </div>
-</div>
 </tui-root>

@@ -42,8 +42,11 @@ export class ServicesComponent implements OnInit {
   drawnLayers: L.FeatureGroup = L.featureGroup();
   isDrawingEnabled: boolean = false;
   isConfirmDisabled: boolean = true;
-  restrictionPolygon: GeoJSON.Feature<GeoJSON.Polygon> | null = null;
+  restrictionPolygon: L.Polygon | null = null;
   errorTooltip: L.Draw.Tooltip | null = null;
+  area: number = 0;
+  heightEnabled: boolean = false;
+  pointsRange: [number, number] = [0, 100];
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -54,9 +57,13 @@ export class ServicesComponent implements OnInit {
 
   initMap(): void {
     setTimeout(() => {
-      this.map = L.map('map', { attributionControl: false }).setView([56.8519, 60.6122], 11);
+      this.map = L.map('map', { attributionControl: false }).setView(
+        [56.8519, 60.6122],
+        11
+      );
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.map);
 
       this.map.addLayer(this.drawnLayers);
@@ -69,14 +76,15 @@ export class ServicesComponent implements OnInit {
         draw: {
           polygon: {
             shapeOptions: {
-              color: '#97009c'
+              color: '#cc5630',
+              fillOpacity: 0.0,
             },
-            allowIntersection: false, // Prevent intersections
+            allowIntersection: false,
             showArea: false,
             drawError: {
               color: '#e1e100',
-              message: 'Невозможно нарисовать это пересечение.'
-            }
+              message: 'Невозможно нарисовать это пересечение.',
+            },
           },
           polyline: false,
           rectangle: false,
@@ -90,33 +98,66 @@ export class ServicesComponent implements OnInit {
 
       this.map.on(L.Draw.Event.CREATED, (event: any) => {
         const layer = event.layer;
-        if (this.checkPolygonInRestriction(layer)) {
-          this.drawnLayers.addLayer(layer);
-          this.isConfirmDisabled = false;
-        } else {
-          alert('Нарисованный многоугольник должен находиться внутри ограниченной зоны.');
-          this.map.removeLayer(layer);
+        this.drawnLayers.addLayer(layer);
+        this.isConfirmDisabled = false;
+        this.updateArea();
+      });
+
+      this.map.on(L.Draw.Event.EDITED, (event: any) => {
+        const layers = event.layers;
+        if (this.restrictionPolygon) {
+          layers.eachLayer((layer: L.Layer) => {
+            if (layer instanceof L.Polygon) {
+              const polygon = layer as L.Polygon;
+              const latLngs = polygon.getLatLngs() as L.LatLng[][];
+              let isValid = true;
+
+              for (const latLng of latLngs[0]) {
+                if (!this.isPointInPolygon(latLng, this.restrictionPolygon!)) {
+                  isValid = false;
+                  break;
+                }
+              }
+              if (!isValid) {
+                this.drawControl._toolbars['edit'].disable();
+                this.showErrorTooltip(
+                  'Отредактированный многоугольник должен находиться внутри ограниченной зоны.',
+                  polygon.getBounds().getCenter()
+                );
+              }
+            }
+          });
         }
+
+        this.updateArea();
       });
 
       this.map.on('draw:drawvertex', (event: any) => {
         const layers = event.layers.getLayers();
-        if (layers.length > 0) {
-          const layer = layers[0];
-          if (layer && layer instanceof L.Marker) {
-            const latlng = layer.getLatLng();
-            const point = turf.point([latlng.lng, latlng.lat]);
-            if (this.restrictionPolygon && !turf.booleanPointInPolygon(point, this.restrictionPolygon)) {
-              this.map.removeLayer(layer);
-              this.showErrorTooltip('Нарисованный многоугольник должен находиться внутри ограниченной зоны.', latlng);
-
-              const drawHandler = this.drawControl._toolbars.draw._modes.polygon.handler;
-              setTimeout(() => {
-                drawHandler.disable();
-                drawHandler.enable();
-              }, 0);
-
-              return;
+        for (let layer of layers) {
+          if (layers.length > 0) {
+            if (layer && layer instanceof L.Marker) {
+              const latlng = layer.getLatLng();
+              if (
+                this.restrictionPolygon &&
+                !this.isPointInPolygon(latlng, this.restrictionPolygon)
+              ) {
+                this.showErrorTooltip(
+                  'Нарисованный многоугольник должен находиться внутри ограниченной зоны.',
+                  latlng
+                );
+                const drawHandler =
+                  this.drawControl._toolbars.draw._modes.polygon.handler;
+                if (drawHandler._poly?.getLatLngs().length <= 1) {
+                  setTimeout(() => {
+                    drawHandler.disable();
+                    drawHandler.enable();
+                  }, 0);
+                } else {
+                  drawHandler.deleteLastVertex();
+                }
+                return;
+              }
             }
           }
         }
@@ -130,7 +171,7 @@ export class ServicesComponent implements OnInit {
         if (layer && layer.getLatLng) {
           latlng = layer.getLatLng();
         } else {
-          latlng = this.map.getCenter(); // Если не удается получить координаты, используем центр карты
+          latlng = this.map.getCenter();
         }
 
         this.showErrorTooltip(error, latlng);
@@ -146,22 +187,73 @@ export class ServicesComponent implements OnInit {
         if (this.drawnLayers.getLayers().length === 0) {
           this.isConfirmDisabled = true;
         }
+        this.updateArea();
       });
 
       this.map.on(L.Draw.Event.DRAWSTOP, () => {
         if (this.drawnLayers.getLayers().length === 0) {
           this.isConfirmDisabled = true;
         }
+        this.updateArea();
       });
+    }, 1000);
+  }
 
-    }, 100);
+  updateArea(): void {
+    this.area = this.drawnLayers.getLayers().reduce((sum, layer) => {
+      const latLngs = (layer as L.Polygon).getLatLngs() as L.LatLng[][];
+      if (latLngs.length > 0) {
+        const coords = latLngs[0].map((latLng) => [latLng.lng, latLng.lat]);
+
+        if (coords.length >= 3) {
+          // Если три или более точки, считаем как треугольник или многоугольник
+          if (coords.length === 3) {
+            const [a, b, c] = coords;
+            const polygon = turf.polygon([[a, b, c, a]]); // Закрываем треугольник
+            return sum + turf.area(polygon);
+          } else if (coords.length >= 4) {
+            // Ensure the polygon is closed
+            if (
+              coords[0][0] !== coords[coords.length - 1][0] ||
+              coords[0][1] !== coords[coords.length - 1][1]
+            ) {
+              coords.push(coords[0]);
+            }
+            const polygon = turf.polygon([coords]);
+            return sum + turf.area(polygon);
+          }
+        } else if (coords.length === 2) {
+          // Если две точки, считаем длину линии
+          const [a, b] = coords;
+          return sum + turf.distance(turf.point(a), turf.point(b));
+        } else if (coords.length === 1) {
+          // Если одна точка, площадь считается нулевой
+          return sum;
+        }
+      }
+      return sum;
+    }, 0);
+  }
+
+  removeLastVertex() {
+    const lastPolygon =
+      this.drawnLayers.getLayers()[this.drawnLayers.getLayers().length - 1];
+    if (lastPolygon && lastPolygon instanceof L.Polygon) {
+      const latlngs = lastPolygon.getLatLngs() as L.LatLng[][];
+      if (latlngs[0].length > 1) {
+        latlngs[0].pop();
+        lastPolygon.setLatLngs(latlngs);
+      }
+    }
   }
 
   startDrawing(): void {
     if (!this.isDrawingEnabled) {
       this.map.addControl(this.drawControl);
       this.isDrawingEnabled = true;
-      const drawPolygonButton = document.querySelector('.leaflet-draw-draw-polygon');
+      const drawPolygonButton = document.querySelector(
+        '.leaflet-draw-draw-polygon'
+      );
       if (drawPolygonButton) {
         (drawPolygonButton as HTMLElement).click();
       }
@@ -178,24 +270,34 @@ export class ServicesComponent implements OnInit {
   }
 
   fetchServices(): void {
-    this.http.get<Service[]>('/api/service/all').subscribe({
+    const url = '/api/api/service/all';
+    this.http.get<Service[]>(url).subscribe({
       next: (data) => {
         this.services = data;
         this.filteredServices = data;
       },
-      error: (error) => console.error('There was an error fetching services!', error)
+      error: (error) =>
+        console.error('There was an error fetching services!', error),
     });
   }
 
   fetchParameters(serviceUuid: string): void {
-    this.http.get<{ parameters: Parameter[] }>(`/api/service/parameters?uuid=${serviceUuid}`).subscribe({
-      next: (data) => {
-        this.parameters = data.parameters;
-        this.filteredParameters = data.parameters;
-        this.drawServicePolygons();
-      },
-      error: (error) => console.error('There was an error fetching parameters!', error)
-    });
+    this.http
+      .get<{ parameters: any[] }>(
+        `/api/api/service/parameters?uuid=${serviceUuid}`
+      )
+      .subscribe({
+        next: (data) => {
+          if (data.parameters.length > 0) {
+            this.parameters = data.parameters;
+            this.filteredParameters = data.parameters;
+            this.selectedParameter = this.parameters[0];
+            this.onParameterChange(this.selectedParameter);
+          }
+        },
+        error: (error) =>
+          console.error('There was an error fetching parameters!', error),
+      });
   }
 
   onServiceChange(service: Service): void {
@@ -219,40 +321,56 @@ export class ServicesComponent implements OnInit {
       return;
     }
 
-    this.selectedService.parameters.forEach(parameter => {
+    this.selectedService.parameters.forEach((parameter) => {
       if (parameter.polygon) {
-        const points: L.LatLngTuple[] = parameter.polygon.points.map((point: { x: number, y: number }) => [point.y, point.x]);
+        const points: L.LatLngTuple[] = parameter.polygon.points.map(
+          (point: { x: number; y: number }) => [point.y, point.x]
+        );
         const polygon = L.polygon(points).addTo(this.map);
         this.drawnPolygons.push(polygon);
+
+        // if (this.selectedParameter && this.selectedParameter.restrictions.mustBeInside) {
         const closedPoints = points.concat([points[0]]);
-        this.restrictionPolygon = turf.polygon([closedPoints.map(point => [point[1], point[0]])]);
+        this.restrictionPolygon = L.polygon(closedPoints);
+        // }
       }
     });
 
     if (this.drawnPolygons.length > 0) {
-      const allBounds = this.drawnPolygons.map(polygon => polygon.getBounds());
-      const combinedBounds = allBounds.reduce((acc, bounds) => acc.extend(bounds), L.latLngBounds([]));
+      const allBounds = this.drawnPolygons.map((polygon) =>
+        polygon.getBounds()
+      );
+      const combinedBounds = allBounds.reduce(
+        (acc, bounds) => acc.extend(bounds),
+        L.latLngBounds([])
+      );
       this.map.fitBounds(combinedBounds);
     }
+    this.updateArea();
   }
 
   clearPolygons(): void {
-    this.drawnPolygons.forEach(polygon => this.map.removeLayer(polygon));
+    this.drawnPolygons.forEach((polygon) => this.map.removeLayer(polygon));
     this.drawnPolygons = [];
     this.drawnLayers.clearLayers();
     this.restrictionPolygon = null;
+    this.updateArea();
   }
 
   filterServices(event: Event): void {
     const input = event.target as HTMLInputElement;
     const query = input.value;
-    this.filteredServices = this.services.filter(service => service.title.toLowerCase().includes(query.toLowerCase()));
+    this.filteredServices = this.services.filter((service) =>
+      service.title.toLowerCase().includes(query.toLowerCase())
+    );
   }
 
   filterParameters(event: Event): void {
     const input = event.target as HTMLInputElement;
     const query = input.value;
-    this.filteredParameters = this.parameters.filter(parameter => parameter.title.toLowerCase().includes(query.toLowerCase()));
+    this.filteredParameters = this.parameters.filter((parameter) =>
+      parameter.title.toLowerCase().includes(query.toLowerCase())
+    );
   }
 
   getServiceTitle(service: Service | null): string {
@@ -267,17 +385,27 @@ export class ServicesComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
-  checkPolygonInRestriction(layer: L.Layer): boolean {
-    if (this.selectedParameter && this.selectedParameter.polygon && this.selectedParameter.restrictions.mustBeInside) {
-      const restrictionPolygon = turf.polygon([
-        this.selectedParameter.polygon.points.map(point => [point.x, point.y])
-      ]);
-      const drawnPolygonCoords = (layer as L.Polygon).getLatLngs() as L.LatLng[][];
-      const drawnPolygon = turf.polygon([drawnPolygonCoords[0].map((point: L.LatLng) => [point.lng, point.lat])]);
+  isPointInPolygon(marker: L.LatLng, poly: L.Polygon): boolean {
+    var point = turf.point([marker.lng, marker.lat]);
+    var allPolyPoints = poly.getLatLngs() as L.LatLng[][];
 
-      return turf.booleanContains(restrictionPolygon, drawnPolygon);
-    }
-    return true;
+    var polygonCoords: number[][][] = allPolyPoints.map((ring) => {
+      const coords = ring.map((latLng) => [latLng.lng, latLng.lat]);
+
+      if (coords.length > 0) {
+        const firstCoord = coords[0];
+        const lastCoord = coords[coords.length - 1];
+        if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
+          coords.push(firstCoord);
+        }
+      }
+
+      return coords;
+    });
+
+    var polygon = turf.polygon(polygonCoords); // Correct structure
+
+    return turf.booleanPointInPolygon(point, polygon);
   }
 
   showErrorTooltip(message: string, latlng: L.LatLng): void {

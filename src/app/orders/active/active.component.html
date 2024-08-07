@@ -1,4 +1,4 @@
-<div class="order-table">
+<div class="order-table" *ngIf="hasOrders; else noOrders">
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>
     <table tuiTable class="table" [columns]="columns">
@@ -23,7 +23,7 @@
           <td class="tui-table__td tui-table__td_align_center">
             <span>Заказ {{ order.orderNumber }}</span><br>
             <span class="secondary-text">Договор {{ order.contractNumber }}</span>
-         </td>
+          </td>
           <td class="tui-table__td tui-table__td_align_center">
             <div>{{ getServiceTitles(order.service ?? []) }}</div>
           </td>
@@ -55,3 +55,9 @@
     <tui-pagination size="m" [length]="totalPages" [(ngModel)]="currentPage" (indexChange)="fetchOrders($event)"></tui-pagination>
   </tui-scrollbar>
 </div>
+
+<ng-template #noOrders>
+  <div class="tui-text_body-s">
+    Записей с заказами не найдено
+  </div>
+</ng-template>

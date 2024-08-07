@@ -5,27 +5,34 @@ import { StorageService } from '../_services/storage.service';
 import { AuthService } from '../_services/auth.service';
 
 import { Observable, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, switchMap, timeout } from 'rxjs/operators';
 
 import { EventData } from '../_shared/event.class';
 import { EventBusService } from '../_shared/event-bus.service';
+import { Router } from '@angular/router';
+import { TuiAlertService } from '@taiga-ui/core';
 
 @Injectable()
 export class HttpRequestInterceptor implements HttpInterceptor {
   private isRefreshing = false;
+  private readonly TIMEOUT = 5000; 
 
   constructor(
     private storageService: StorageService,
     private authService: AuthService,
-    private eventBusService: EventBusService
+    private eventBusService: EventBusService,
+    private router: Router,
+    private alertService: TuiAlertService
   ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     req = req.clone({
-      withCredentials: true,
+      // withCredentials: true,
     });
 
+
     return next.handle(req).pipe(
+      timeout(this.TIMEOUT),
       catchError((error) => {
         if (
           error instanceof HttpErrorResponse &&
@@ -33,6 +40,12 @@ export class HttpRequestInterceptor implements HttpInterceptor {
           error.status === 401
         ) {
           return this.handle401Error(req, next);
+        }
+
+        if (error.name === 'TimeoutError') {
+          // Handle timeout errors
+          console.error('Request timed out.');
+          this.alertService.open('Истекло время запроса. Пожалуйста, повторите попытку позже.', { status: 'error' }).subscribe();
         }
 
         return throwError(() => error);
@@ -48,23 +61,30 @@ export class HttpRequestInterceptor implements HttpInterceptor {
         return this.authService.refreshToken().pipe(
           switchMap(() => {
             this.isRefreshing = false;
-
             return next.handle(request);
           }),
           catchError((error) => {
             this.isRefreshing = false;
 
-            if (error.status == '403') {
+            if (error.status == 403  || error.status === 401) {
               this.eventBusService.emit(new EventData('logout', null));
+              this.redirectToLogin()
             }
 
             return throwError(() => error);
           })
         );
+      } else {
+        this.redirectToLogin();
       }
     }
 
     return next.handle(request);
+  }
+
+  private redirectToLogin(): void {
+    this.storageService.clean(); 
+    this.router.navigate(['/login']); 
   }
 }
 

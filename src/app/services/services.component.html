@@ -1,7 +1,7 @@
 <tui-root>
   <div class="custom-header">
     <div class="left-section">
-      <img src="assets/Logo.svg" class="logo-img" />
+      <img src="assets/LogoService.png" class="logo-img" />
     </div>
     <div class="right-section">
       <button size="m" tuiButton (click)="goBack()">Вернуться на портал</button>
@@ -20,7 +20,7 @@
           <!-- Service selection accordion item -->
           <tui-accordion-item [open]="true">
             <div tuiAccordionItemTitle>Выбор услуги</div>
-            <div tuiAccordionItemContent>
+            <div tuiAccordionItemContent class="custom-accordion-content">
               <tui-combo-box
                 tuiDropdownMobile
                 [tuiTextfieldCleaner]="true"
@@ -43,52 +43,56 @@
           <!-- Parameters selection accordion item -->
           <tui-accordion-item>
             <div tuiAccordionItemTitle>Выбор параметров</div>
-            <div tuiAccordionItemContent>
-              <tui-select
-                class="tui-space_vertical-4"
-                [tuiDropdownMobile]="'Select parameter'"
-                [tuiTextfieldLabelOutside]="true"
-                [(ngModel)]="selectedParameter"
-                (ngModelChange)="onParameterChange($event)"
-                (input)="filterParameters($event)"
-                [valueContent]="getParameterTitle(selectedParameter)"
-                [stringify]="getParameterTitle"
-              >
-                <tui-data-list-wrapper
-                  *tuiDataList
-                  [items]="filteredParameters"
-                  [itemContent]="parameterTemplate"
-                ></tui-data-list-wrapper>
-              </tui-select>
-              <button 
-                size="m" 
-                tuiButton 
+            <div tuiAccordionItemContent class="custom-accordion-content">
+              <button
+                class="btn-draw"
+                size="m"
+                tuiButton
                 *ngIf="!isDrawingEnabled"
                 (click)="startDrawing()"
               >
                 Нажмите для выбора территории
               </button>
-              <button 
-                size="m" 
-                tuiButton 
-                *ngIf="isDrawingEnabled" 
+              <button
+              class="btn-draw"
+                size="m"
+                tuiButton
+                *ngIf="isDrawingEnabled"
                 [disabled]="isConfirmDisabled"
               >
                 Для подтверждения нажмите Enter
               </button>
+              <div>
+                <p>Площадь выбранной территории: {{ area | number }} м²</p>
+              </div>
+
+              <div>
+                <tui-toggle [(ngModel)]="heightEnabled" size="l">
+                </tui-toggle>
+                Высота
+              </div>
+
+              <div class="points-range">
+                <label>Количество точек</label>
+                <tui-input-range
+                  [(ngModel)]="pointsRange"
+                  [min]="pointsRange[0]"
+                  [max]="pointsRange[1]"
+                ></tui-input-range>
+              </div>
             </div>
           </tui-accordion-item>
 
           <!-- Calculation accordion item -->
           <tui-accordion-item>
             <div tuiAccordionItemTitle>Расчет</div>
-            <div tuiAccordionItemContent>Расчет</div>
+            <div tuiAccordionItemContent class="custom-accordion-content">Расчет</div>
           </tui-accordion-item>
 
           <!-- Checkout accordion item -->
           <tui-accordion-item>
             <div tuiAccordionItemTitle>Оформление</div>
-            <div tuiAccordionItemContent>Оформление</div>
+            <div tuiAccordionItemContent class="custom-accordion-content">Оформление</div>
           </tui-accordion-item>
         </tui-accordion>
       </div>

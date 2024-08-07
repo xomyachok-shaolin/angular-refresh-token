@@ -53,8 +53,9 @@ export class ActiveComponent implements OnInit {
   orders: Order[] = [];
   selectedItems: Set<string> = new Set();
   isAllSelected: boolean = false;
-  totalPages: number = 10;
+  totalPages: number = 0;
   currentPage: number = 0;
+  hasOrders: boolean = true;
 
   constructor(
     private orderService: OrderService,
@@ -96,15 +97,16 @@ export class ActiveComponent implements OnInit {
     const sortField = 'COST';
     const sortDirection = 'DESC';
   
-    // Получение UUID пользователя из StorageService
+    // Get user UUID from StorageService
     const user = this.storageService.getUser();
-    console.log(user); // Для отладки
+    console.log(user); // For debugging
     const uuid = user ? user.uuid : null;
   
     if (uuid) {
       this.orderService.getPaginatedUserOrders(uuid, page, sizePerPage, sortField, sortDirection).subscribe({
         next: (data: any) => {
-          if (data && data.content) {
+          if (data && data.content && data.content.length > 0) {
+            this.hasOrders = true;
             const newOrders: Order[] = data.content.map((order: any) => ({
               uuid: order.uuid,
               contractNumber: order.contractNumber,
@@ -127,14 +129,24 @@ export class ActiveComponent implements OnInit {
             this.totalPages = data.totalPages;
           } else {
             console.error('Ответ сервера не содержит данных заказов.');
+            this.hasOrders = false;
+            this.orders = []; // Ensure orders list is empty
+            this.totalPages = 0;
           }
         },
-        error: (error: any) => console.error('Произошла ошибка при загрузке заказов!', error)
+        error: (error: any) => {
+          console.error('Произошла ошибка при загрузке заказов!', error);
+          this.hasOrders = false;
+          this.orders = []; // Ensure orders list is empty
+          this.totalPages = 0;
+        }
       });
     } else {
       console.error('UUID пользователя не найден.');
+      this.hasOrders = false;
     }
   }
+
   
 
   private updateAllOrders(newOrders: Order[]): void {

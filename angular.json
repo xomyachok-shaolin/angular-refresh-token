@@ -58,13 +58,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "2mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "3mb",
+                  "maximumError": "5mb"
                 }
               ],
               "outputHashing": "all"
@@ -82,6 +82,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "browserTarget": "angular-refresh-token:build:production"
@@ -90,16 +93,11 @@
               "browserTarget": "angular-refresh-token:build:development"
             }
           },
-          "defaultConfiguration": "development",
-          "options": {
-            "proxyConfig": "proxy.conf.json"
-          }
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "buildTarget": "angular-refresh-token:build"
-          }
+          "options": {}
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",

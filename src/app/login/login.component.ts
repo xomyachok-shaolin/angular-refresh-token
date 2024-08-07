@@ -17,6 +17,7 @@ export class LoginComponent implements OnInit {
   isLoginFailed = false;
   errorMessage = '';
   roles: string[] = [];
+  showErrorNotification = false;
 
   constructor(private authService: AuthService, private storageService: StorageService) { }
 
@@ -33,20 +34,24 @@ export class LoginComponent implements OnInit {
     this.authService.login(username, password).subscribe({
       next: data => {
         this.storageService.saveUser(data);
-
         this.isLoginFailed = false;
         this.isLoggedIn = true;
         this.roles = this.storageService.getUser().roles;
         this.reloadPage();
       },
       error: err => {
-        this.errorMessage = err.error.message;
+        this.errorMessage = err.error.message || 'Ошибка при входе';
         this.isLoginFailed = true;
+        this.showErrorNotification = true;
       }
     });
   }
 
   reloadPage(): void {
     window.location.reload();
+  }
+
+  onCloseNotification(): void {
+    this.showErrorNotification = false;
   }
 }

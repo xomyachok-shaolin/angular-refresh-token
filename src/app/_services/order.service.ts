@@ -9,11 +9,12 @@ interface OrderResponse {
   totalPages: number;
 }
 
+const API_URL = 'http://192.168.70.220:8888/api/order';
+
 @Injectable({
   providedIn: 'root',
 })
 export class OrderService {
-  private API_URL = 'http://localhost:8081/api/order';
 
   constructor(private http: HttpClient, private storageService: StorageService) {}
 
@@ -21,7 +22,7 @@ export class OrderService {
     const token = this.storageService.getUser();
     return new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
+      'Authorization': token ? `Bearer ${token}` : '',
     });
   }
 
@@ -33,9 +34,10 @@ export class OrderService {
       .set('sortField', sortField)
       .set('sortDirection', sortDirection);
 
-    return this.http.get<OrderResponse>(`${this.API_URL}/pagination/client`, {
+    return this.http.get<OrderResponse>('/api/api/order/pagination/client', {
       params,
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
+      // withCredentials: true,
     });
   }
 }

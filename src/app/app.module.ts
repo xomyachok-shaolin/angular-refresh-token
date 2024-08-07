@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms';
-import { tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule, TuiDropdownModule, TuiDataListModule, TuiHostedDropdownModule, TuiLoaderModule } from '@taiga-ui/core';
+import { tuiSvgOptionsProvider, TUI_SANITIZER, TuiSvgDefsHostModule, TuiButtonModule, TuiTextfieldControllerModule, TuiHintModule, TuiDropdownModule, TuiDataListModule, TuiHostedDropdownModule, TuiLoaderModule, TuiNotificationModule } from '@taiga-ui/core';
 import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -33,7 +33,9 @@ import {
   TuiSelectOptionModule,
   TuiAccordionModule,
   TuiDataListWrapperModule,
-  TuiComboBoxModule
+  TuiComboBoxModule,
+  TuiInputRangeModule,
+  TuiToggleModule
 } from '@taiga-ui/kit';
 import { TuiDropdownMobileModule, TuiTabBarModule } from '@taiga-ui/addon-mobile';
 import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
@@ -77,6 +79,7 @@ import { ServicesComponent } from './services/services.component';
     BrowserAnimationsModule,
     TuiAccordionModule,
     TuiCheckboxLabeledModule,
+    TuiNotificationModule,
     TuiPaginationModule,
     TuiSvgModule,
     TuiScrollbarModule,
@@ -86,6 +89,8 @@ import { ServicesComponent } from './services/services.component';
     TuiSelectModule,
     TuiSelectOptionModule,
     TuiCheckboxModule,
+    TuiInputRangeModule,
+    TuiToggleModule,
     TuiInputModule,
     TuiMultiSelectModule,
     TuiRootModule,
@@ -111,6 +116,7 @@ import { ServicesComponent } from './services/services.component';
     TuiLoaderModule,
     TuiTableFiltersModule,
     TuiHostedDropdownModule,
+    TuiAlertModule,
     ReactiveFormsModule
   ],
   providers: [

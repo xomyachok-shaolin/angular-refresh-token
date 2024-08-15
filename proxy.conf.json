@@ -1,11 +1,26 @@
 {
-    "/api": {
-      "target": "http://192.168.70.220:8888",
-      "secure": false,
-      "changeOrigin": true,
-      "pathRewrite": {
-        "^/api": ""
-      }
+  "/api": {
+    "target": "http://192.168.70.220:8888",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": ""
+    }
+  },
+  "/geoserver": {
+    "target": "http://geoserver.usgik.ru:9090",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/geoserver": ""
+    }
+  },
+  "/tiles": {
+    "target": "https://tile.openstreetmap.org",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/tiles": ""
     }
   }
-  
+}

@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
 import 'leaflet-draw';
 import drawLocales from 'leaflet-draw-locales';
 import * as turf from '@turf/turf';
+import { FormControl } from '@angular/forms';
+import { TuiDialogService } from '@taiga-ui/core';
 
 drawLocales('ru');
 
@@ -46,7 +48,16 @@ export class ServicesComponent implements OnInit {
   errorTooltip: L.Draw.Tooltip | null = null;
   area: number = 0;
   heightEnabled: boolean = false;
-  pointsRange: [number, number] = [0, 100];
+
+  readonly sliderStep = 1;
+  readonly quantum = 0.00001;
+
+  min = 0;
+  max = 100;
+  steps = (this.max - this.min) / this.sliderStep;
+  control = new FormControl([this.min, this.max]);
+
+  private readonly dialogs = inject(TuiDialogService);
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -61,7 +72,7 @@ export class ServicesComponent implements OnInit {
         [56.8519, 60.6122],
         11
       );
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer('/tiles/{z}/{x}/{y}.png', {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.map);
@@ -281,6 +292,21 @@ export class ServicesComponent implements OnInit {
     });
   }
 
+  onAccordionItemOpen(index: number): void {
+    if (!this.selectedService) {
+      this.showWarningDialog();
+    }
+  }
+
+  showWarningDialog(): void {
+    this.dialogs
+      .open(
+        '<div><strong>Внимание:</strong> Не закончено заполнение услуги.</div>',
+        { label: 'Предупреждение', size: 'm' }
+      )
+      .subscribe();
+  }
+
   fetchParameters(serviceUuid: string): void {
     this.http
       .get<{ parameters: any[] }>(
@@ -293,12 +319,23 @@ export class ServicesComponent implements OnInit {
             this.filteredParameters = data.parameters;
             this.selectedParameter = this.parameters[0];
             this.onParameterChange(this.selectedParameter);
+            this.updateRangeSlider(this.selectedParameter);
           }
         },
         error: (error) =>
           console.error('There was an error fetching parameters!', error),
       });
   }
+
+  updateRangeSlider(parameter: Parameter): void {
+    if (parameter.parametersType === 'COUNT') {
+      this.min = parameter.restrictions.min;
+      this.max = parameter.restrictions.max;
+      this.steps = (this.max - this.min) / this.sliderStep;
+      this.control.setValue([this.min, this.max]);
+    }
+  }
+
 
   onServiceChange(service: Service): void {
     this.selectedService = service;
@@ -310,10 +347,40 @@ export class ServicesComponent implements OnInit {
     }
   }
 
+  fetchRestrictionPolygons(bbox: string): void {
+    const url = '/geoserver/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=56.38739152864383,55.30553234524936,56.41610580200159,55.34530687203605';
+    this.http.get<any>(url).subscribe({
+      next: (data) => {
+        this.restrictionPolygon = this.convertGeoJsonToPolygon(data);
+        if (this.restrictionPolygon) {
+          this.map.addLayer(this.restrictionPolygon);
+          this.map.fitBounds(this.restrictionPolygon.getBounds());
+        }
+      },
+      error: (error) => console.error('Ошибка при загрузке ограничительных полигонов', error),
+    });
+  }
+  
+  convertGeoJsonToPolygon(geoJson: any): L.Polygon | null {
+    const features = geoJson.features;
+    if (features.length > 0) {
+      const coordinates = features[0].geometry.coordinates[0].map((coord: number[]) => [coord[1], coord[0]]);
+      return L.polygon(coordinates, { color: '#3388ff' });
+    }
+    return null;
+  }
+  
+
   onParameterChange(parameter: Parameter): void {
     this.selectedParameter = parameter;
     this.clearPolygons();
-    this.drawServicePolygons();
+    console.log(parameter.restrictions)
+    if (parameter.restrictions.mustBeInside) {
+      const bbox = '56.38739152864383,55.30553234524936,56.41610580200159,55.34530687203605'; // Укажите актуальный BBOX
+      this.fetchRestrictionPolygons(bbox);
+    } else {
+      this.drawServicePolygons();
+    }
   }
 
   drawServicePolygons(): void {
@@ -407,6 +474,7 @@ export class ServicesComponent implements OnInit {
 
     return turf.booleanPointInPolygon(point, polygon);
   }
+  
 
   showErrorTooltip(message: string, latlng: L.LatLng): void {
     if (this.errorTooltip) {

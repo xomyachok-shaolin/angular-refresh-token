@@ -40,4 +40,22 @@ export class OrderService {
       // withCredentials: true,
     });
   }
+
+  getPaginatedArchivedUserOrders(
+    uuid: string,
+    page: number,
+    sizePerPage: number,
+    sortField: string,
+    sortDirection: string
+  ): Observable<any> {
+    const url = `/api/api/order/pagination/archive/client`;
+    const params = new HttpParams()
+      .set('uuid', uuid)
+      .set('page', page.toString())
+      .set('sizePerPage', sizePerPage.toString())
+      .set('sortField', sortField)
+      .set('sortDirection', sortDirection);
+  
+    return this.http.get<any>(url, { params });
+  }  
 }

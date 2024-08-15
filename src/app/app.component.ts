@@ -5,6 +5,7 @@ import { AuthService } from './_services/auth.service';
 import { EventBusService } from './_shared/event-bus.service';
 import { FormControl, FormGroup } from '@angular/forms';
 import { NavigationEnd, Router, Event } from '@angular/router';
+import { TuiAlertService } from '@taiga-ui/core';
 
 @Component({
   selector: 'app-root',
@@ -33,20 +34,24 @@ export class AppComponent {
   open = false;
 
   onClick(): void {
-    this.open = false;
-    this.index2 = 2;
+    setTimeout(() => {
+      // this.index2 = 2;
+      this.open = !this.open;
+    }, 200); 
   }
 
   constructor(
     private storageService: StorageService,
     private authService: AuthService,
     private eventBusService: EventBusService,
-    private router: Router
+    private router: Router,
+    private alertService: TuiAlertService
   ) { 
     this.router.events.pipe(
       filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
       this.isServicesRoute = event.urlAfterRedirects.includes('/services');
+      this.open = false;
     });
   }
 
@@ -73,12 +78,13 @@ export class AppComponent {
       next: res => {
         console.log(res);
         this.storageService.clean();
-
-        window.location.reload();
+        this.router.navigate(['/login']).then(() => {
+          this.alertService.open('Вы успешно вышли из системы.', { status: 'success' }).subscribe();
+        });
       },
       error: err => {
         console.log(err);
       }
     });
-  }
+  }  
 }

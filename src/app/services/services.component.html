@@ -16,7 +16,7 @@
         <div id="map" style="height: 100%; border-radius: 16px"></div>
       </div>
       <div class="right-panel">
-        <tui-accordion>
+        <tui-accordion >
           <!-- Service selection accordion item -->
           <tui-accordion-item [open]="true">
             <div tuiAccordionItemTitle>Выбор услуги</div>
@@ -41,7 +41,7 @@
           </tui-accordion-item>
 
           <!-- Parameters selection accordion item -->
-          <tui-accordion-item>
+          <tui-accordion-item (openChange)="onAccordionItemOpen(1)">
             <div tuiAccordionItemTitle>Выбор параметров</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <button
@@ -54,7 +54,7 @@
                 Нажмите для выбора территории
               </button>
               <button
-              class="btn-draw"
+                class="btn-draw"
                 size="m"
                 tuiButton
                 *ngIf="isDrawingEnabled"
@@ -67,7 +67,11 @@
               </div>
 
               <div>
-                <tui-toggle [(ngModel)]="heightEnabled" size="l">
+                <tui-toggle
+                  [(ngModel)]="heightEnabled"
+                  size="l"
+                  [showIcons]="true"
+                >
                 </tui-toggle>
                 Высота
               </div>
@@ -75,24 +79,32 @@
               <div class="points-range">
                 <label>Количество точек</label>
                 <tui-input-range
-                  [(ngModel)]="pointsRange"
-                  [min]="pointsRange[0]"
-                  [max]="pointsRange[1]"
+                  [formControl]="control"
+                  [max]="max"
+                  [min]="min"
+                  [quantum]="quantum"
+                  [steps]="steps"
+                  [tuiTextfieldLabelOutside]="true"
+                  [tuiTextfieldSize]="'m'"
                 ></tui-input-range>
               </div>
             </div>
           </tui-accordion-item>
 
           <!-- Calculation accordion item -->
-          <tui-accordion-item>
+          <tui-accordion-item (openChange)="onAccordionItemOpen(2)">
             <div tuiAccordionItemTitle>Расчет</div>
-            <div tuiAccordionItemContent class="custom-accordion-content">Расчет</div>
+            <div tuiAccordionItemContent class="custom-accordion-content">
+              Расчет
+            </div>
           </tui-accordion-item>
 
           <!-- Checkout accordion item -->
-          <tui-accordion-item>
+          <tui-accordion-item (openChange)="onAccordionItemOpen(3)">
             <div tuiAccordionItemTitle>Оформление</div>
-            <div tuiAccordionItemContent class="custom-accordion-content">Оформление</div>
+            <div tuiAccordionItemContent class="custom-accordion-content">
+              Оформление
+            </div>
           </tui-accordion-item>
         </tui-accordion>
       </div>

@@ -25,7 +25,7 @@ export class MainComponent implements OnInit {
   loadMain() {
     const user = this.storageService.getUser();
     if (user && user.uuid) {
-      this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe(data => {
+      this.http.get<any>(`/api/api/client/?uuid=${user.uuid}`).subscribe(data => {
         this.companyName = data.companyName || 'Неизвестно';
         this.directorName = `${data.lastName || ''} ${data.firstName || ''} ${data.middleName || ''}`.trim() || 'Неизвестно';
         this.actualAddress = data.actualAddress || 'Неизвестно';

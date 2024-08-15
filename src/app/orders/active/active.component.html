@@ -5,7 +5,7 @@
       <thead>
         <tr tuiThGroup>
           <th tuiTh>
-            <tui-checkbox [(ngModel)]="isAllSelected" (ngModelChange)="toggleSelectAll()"></tui-checkbox>
+            <tui-checkbox [ngModel]="checked" (ngModelChange)="onCheck($event)"></tui-checkbox>
           </th>
           <th tuiTh>Номер</th>
           <th tuiTh>Тип</th>
@@ -18,7 +18,7 @@
       <tbody tuiTbody>
         <tr tui-table__tr *ngFor="let order of orders" class="tui-table__tr tui-table__tr_border_top">
           <td class="tui-table__td tui-table__td_align_center">
-            <tui-checkbox [(ngModel)]="order.selected" (ngModelChange)="toggleSelection(order.uuid)"></tui-checkbox>
+            <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
           </td>
           <td class="tui-table__td tui-table__td_align_center">
             <span>Заказ {{ order.orderNumber }}</span><br>

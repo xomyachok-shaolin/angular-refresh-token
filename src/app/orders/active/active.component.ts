@@ -12,7 +12,6 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
 import { Observable } from 'rxjs';
 import { EMPTY_QUERY, TuiDay } from '@taiga-ui/cdk';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { StorageService } from '../../_services/storage.service';
 
 @Component({
@@ -47,20 +46,6 @@ export class ActiveComponent implements OnInit {
   readonly max = new TuiDay(2040, 2, 20);
 
   form: FormGroup;
-  statusOptions = [
-    'Выполнено',
-    'В обработке',
-    'Отказано',
-    'Ожидание подтверждения',
-  ];
-  serviceOptions = [
-    'Все',
-    'Создание единых 3D-стереомоделей',
-    'Аэрофотосъемка',
-    'Фотограмметрические работы',
-    'Услуги по стереомоделям',
-  ];
-
   readonly columns = [
     'Номер',
     'Тип',
@@ -78,11 +63,12 @@ export class ActiveComponent implements OnInit {
   constructor(
     private orderService: OrderService,
     private fb: FormBuilder,
-    private storageService: StorageService // Добавление StorageService
+    private storageService: StorageService
   ) {
     this.form = this.fb.group({
-      selectedStatus: [''],
-      dateRange: [{ begin: new Date(), end: new Date() }],
+      selectedServices: [[]], 
+      selectedStatuses: [[]], 
+      dateRange: [{ begin: this.min, end: this.max }], 
     });
   }
 
@@ -109,6 +95,7 @@ export class ActiveComponent implements OnInit {
     const sizePerPage = 3;
     const sortField = 'COST';
     const sortDirection = 'DESC';
+    const archive = false;
 
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
@@ -122,7 +109,8 @@ export class ActiveComponent implements OnInit {
           page,
           sizePerPage,
           sortField,
-          sortDirection
+          sortDirection,
+          archive
         )
         .subscribe({
           next: (data: any) => {
@@ -187,6 +175,8 @@ export class ActiveComponent implements OnInit {
         return 'В обработке';
       case 'NotReady':
         return 'Отказано';
+      case 'inBasket':
+        return 'Не оплачено';
       default:
         return status;
     }

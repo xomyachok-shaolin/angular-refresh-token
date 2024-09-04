@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "http://192.168.70.220:8888",
+    "target": "http://192.168.70.220:8888/api",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {
@@ -16,7 +16,7 @@
     }
   },
   "/tiles": {
-    "target": "https://tile.openstreetmap.org",
+    "target": "https://a.tile.openstreetmap.org",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {

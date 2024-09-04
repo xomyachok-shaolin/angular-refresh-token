@@ -16,8 +16,6 @@ import {
   TuiHostedDropdownModule,
   TuiLoaderModule,
   TuiNotificationModule,
-  TUI_ICONS,
-  TUI_ICONS_PATH,
   TuiRootModule,
   TuiDialogModule,
   TuiAlertModule,
@@ -79,6 +77,7 @@ import { OrderService } from './_services/order.service';
 import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
 import { TuiDropdownHostModule } from '@taiga-ui/cdk';
 import { ServicesComponent } from './services/services.component';
+import { CommonModule } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -117,7 +116,6 @@ import { ServicesComponent } from './services/services.component';
     TuiInputDateRangeModule,
     TuiSelectModule,
     TuiSelectOptionModule,
-    TuiCheckboxModule,
     TuiInputRangeModule,
     TuiToggleModule,
     TuiInputModule,
@@ -147,6 +145,7 @@ import { ServicesComponent } from './services/services.component';
     TuiHostedDropdownModule,
     TuiAlertModule,
     ReactiveFormsModule,
+    CommonModule,
   ],
   providers: [
     OrderService,

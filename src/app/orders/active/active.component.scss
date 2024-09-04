@@ -27,7 +27,8 @@ th {
 
 .completed,
 .denied,
-.processing {
+.processing,
+.basket {
     display: flex;
     align-items: center;
     text-transform: capitalize;
@@ -48,6 +49,10 @@ th {
 
 .processing:before {
     background: #70B6F6;
+}
+
+.basket:before {
+    background: #fddf34;
 }
 
 .filter-bar {

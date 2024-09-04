@@ -281,7 +281,7 @@ export class ServicesComponent implements OnInit {
   }
 
   fetchServices(): void {
-    const url = '/api/api/service/all';
+    const url = '/api/service/all';
     this.http.get<Service[]>(url).subscribe({
       next: (data) => {
         this.services = data;
@@ -308,24 +308,22 @@ export class ServicesComponent implements OnInit {
   }
 
   fetchParameters(serviceUuid: string): void {
-    this.http
-      .get<{ parameters: any[] }>(
-        `/api/api/service/parameters?uuid=${serviceUuid}`
-      )
-      .subscribe({
-        next: (data) => {
-          if (data.parameters.length > 0) {
-            this.parameters = data.parameters;
-            this.filteredParameters = data.parameters;
-            this.selectedParameter = this.parameters[0];
-            this.onParameterChange(this.selectedParameter);
-            this.updateRangeSlider(this.selectedParameter);
-          }
-        },
-        error: (error) =>
-          console.error('There was an error fetching parameters!', error),
-      });
-  }
+    const url = `/api/service/parameters?uuid=${serviceUuid}`;
+    this.http.get<{ parameter: any }>(url).subscribe({
+      next: (data) => {
+        if (data && data.parameter) {
+          this.parameters = [data.parameter]; // Convert the single parameter object into an array
+          this.filteredParameters = this.parameters;
+          this.selectedParameter = this.parameters[0];
+          this.onParameterChange(this.selectedParameter);
+          this.updateRangeSlider(this.selectedParameter);
+        }
+      },
+      error: (error) => {
+        console.error('There was an error fetching parameters!', error);
+      },
+    });
+  }  
 
   updateRangeSlider(parameter: Parameter): void {
     if (parameter.parametersType === 'COUNT') {
@@ -387,7 +385,10 @@ export class ServicesComponent implements OnInit {
     if (!this.selectedService) {
       return;
     }
-
+  
+    // Clear previously drawn polygons before drawing new ones
+    this.clearPolygons();
+  
     this.selectedService.parameters.forEach((parameter) => {
       if (parameter.polygon) {
         const points: L.LatLngTuple[] = parameter.polygon.points.map(
@@ -395,14 +396,15 @@ export class ServicesComponent implements OnInit {
         );
         const polygon = L.polygon(points).addTo(this.map);
         this.drawnPolygons.push(polygon);
-
-        // if (this.selectedParameter && this.selectedParameter.restrictions.mustBeInside) {
-        const closedPoints = points.concat([points[0]]);
-        this.restrictionPolygon = L.polygon(closedPoints);
-        // }
+  
+        // if the selected parameter has restrictions, set the restriction polygon
+        if (this.selectedParameter && this.selectedParameter.restrictions.mustBeInside) {
+          const closedPoints = points.concat([points[0]]);
+          this.restrictionPolygon = L.polygon(closedPoints);
+        }
       }
     });
-
+  
     if (this.drawnPolygons.length > 0) {
       const allBounds = this.drawnPolygons.map((polygon) =>
         polygon.getBounds()
@@ -415,14 +417,27 @@ export class ServicesComponent implements OnInit {
     }
     this.updateArea();
   }
+  
 
   clearPolygons(): void {
+    // Clear each polygon from the map
     this.drawnPolygons.forEach((polygon) => this.map.removeLayer(polygon));
+    
+    // Clear the list of drawn polygons
     this.drawnPolygons = [];
+  
+    // Clear any drawn layers from the drawn feature group
     this.drawnLayers.clearLayers();
-    this.restrictionPolygon = null;
+    
+    // Remove the restriction polygon from the map if it exists
+    if (this.restrictionPolygon) {
+      this.map.removeLayer(this.restrictionPolygon);
+      this.restrictionPolygon = null;
+    }
+    
     this.updateArea();
   }
+   
 
   filterServices(event: Event): void {
     const input = event.target as HTMLInputElement;

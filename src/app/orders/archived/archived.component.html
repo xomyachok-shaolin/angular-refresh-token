@@ -29,7 +29,7 @@
             </td>
             <td class="tui-table__td tui-table__td_align_center">{{ order.execution | date: 'dd.MM.yyyy' }}</td>
             <td class="tui-table__td tui-table__td_align_center">
-              <div [class]="{'completed': order.executionStatus === 'Выполнено', 'processing': order.executionStatus === 'В обработке', 'denied': order.executionStatus === 'Отказано'}">
+              <div [class]="{'completed': order.executionStatus === 'Выполнено', 'processing': order.executionStatus === 'В обработке', 'denied': order.executionStatus === 'Отказано', 'basket': order.executionStatus === 'Не оплачено'}">
                 {{ order.executionStatus }}
               </div>
             </td>

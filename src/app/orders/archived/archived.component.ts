@@ -108,6 +108,7 @@ export class ArchivedComponent implements OnInit {
     const sizePerPage = 3;
     const sortField = 'COST';
     const sortDirection = 'DESC';
+    const archive = true;
 
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
@@ -121,7 +122,8 @@ export class ArchivedComponent implements OnInit {
           page,
           sizePerPage,
           sortField,
-          sortDirection
+          sortDirection,
+          archive
         )
         .subscribe({
           next: (data: any) => {
@@ -186,6 +188,8 @@ export class ArchivedComponent implements OnInit {
         return 'В обработке';
       case 'NotReady':
         return 'Отказано';
+      case 'inBasket':
+        return 'Не оплачено';
       default:
         return status;
     }

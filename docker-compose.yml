@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-container
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./dist/angular-refresh-token:/usr/share/nginx/html
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx_certificates:/etc/nginx/ssl
+
+  angular-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: angular-app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - .:/app

@@ -1,4 +1,6 @@
 import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnInit,
@@ -8,16 +10,23 @@ import {
 } from '@angular/core';
 import { OrderService } from '../../_services/order.service';
 import { Order, Service } from '../order.model';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
 import { Observable } from 'rxjs';
-import { EMPTY_QUERY, TuiDay } from '@taiga-ui/cdk';
+import {
+  EMPTY_QUERY,
+  TUI_DEFAULT_MATCHER,
+  TuiBooleanHandler,
+  TuiDay,
+  tuiPure,
+} from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
 
 @Component({
   selector: 'app-active',
   templateUrl: './active.component.html',
   styleUrls: ['./active.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActiveComponent implements OnInit {
   @ViewChild(TuiDriver)
@@ -42,9 +51,6 @@ export class ActiveComponent implements OnInit {
     this.open = !this.open;
   }
 
-  readonly min = new TuiDay(2000, 2, 20);
-  readonly max = new TuiDay(2040, 2, 20);
-
   form: FormGroup;
   readonly columns = [
     'Номер',
@@ -63,17 +69,56 @@ export class ActiveComponent implements OnInit {
   constructor(
     private orderService: OrderService,
     private fb: FormBuilder,
-    private storageService: StorageService
+    private storageService: StorageService,
+  private cdRef: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
-      selectedServices: [[]], 
-      selectedStatuses: [[]], 
-      dateRange: [{ begin: this.min, end: this.max }], 
+      selectedServices: [[]],
+      selectedStatuses: [[]],
+      dateRange: new FormControl(null),
+      searchAll: new FormControl(''),
     });
   }
 
+  protected availableServices: readonly string[] = [
+    'Определение_Координат_ЛЭП',
+    'Определение_Координат_Характерых_Точек_ЗУ',
+    'Создание_Матрицы_Рельефа',
+  ];
+
+  protected availableStatuses: readonly string[] = [
+    'Выполнено',
+    'В обработке',
+    'Отказано',
+    'Не оплачено',
+  ];
+
+  protected search: string | null = '';
+
+  @tuiPure
+  protected filterServices(search: string | null): readonly string[] {
+    return this.availableServices.filter((service) =>
+      TUI_DEFAULT_MATCHER(service, search || '')
+    );
+  }
+
+  @tuiPure
+  protected filterStatuses(search: string | null): readonly string[] {
+    return this.availableStatuses.filter((status) =>
+      TUI_DEFAULT_MATCHER(status, search || '')
+    );
+  }
+
+  protected tagValidator: TuiBooleanHandler<string> = (tag) => tag.length > 0;
+
   ngOnInit() {
+    // Trigger the initial fetch of orders
     this.fetchOrders(this.currentPage);
+
+    // Subscribe to changes in the form filters
+    this.form.valueChanges.subscribe(() => {
+      this.fetchOrders(this.currentPage);
+    });
   }
 
   get checked(): boolean | null {
@@ -96,13 +141,25 @@ export class ActiveComponent implements OnInit {
     const sortField = 'COST';
     const sortDirection = 'DESC';
     const archive = false;
-
+  
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
-    console.log(user); // For debugging
     const uuid = user ? user.uuid : null;
-
+  
     if (uuid) {
+      const selectedServices = this.form.value.selectedServices;
+      const selectedStatuses = this.form.value.selectedStatuses;
+  
+      const dateRange = this.form.value.dateRange;
+      const startDate =
+        dateRange?.begin instanceof TuiDay
+          ? dateRange.begin.toLocalNativeDate()
+          : null;
+      const endDate =
+        dateRange?.end instanceof TuiDay
+          ? dateRange.end.toLocalNativeDate()
+          : null;
+  
       this.orderService
         .getPaginatedUserOrders(
           uuid,
@@ -110,13 +167,22 @@ export class ActiveComponent implements OnInit {
           sizePerPage,
           sortField,
           sortDirection,
-          archive
+          archive,
+          selectedStatuses,
+          selectedServices,
+          startDate,
+          endDate
         )
         .subscribe({
           next: (data: any) => {
-            if (data && data.content && data.content.length > 0) {
+            if (!data) {
+              console.log('204 No Content - No orders found.');
+              this.hasOrders = false;
+              this.orders = [];
+              this.totalPages = 0;
+            } else if (data.content && data.content.length > 0) {
               this.hasOrders = true;
-              const newOrders: Order[] = data.content.map((order: any) => ({
+              this.orders = data.content.map((order: any) => ({
                 uuid: order.uuid,
                 contractNumber: order.contractNumber,
                 orderNumber: order.orderNumber,
@@ -133,20 +199,19 @@ export class ActiveComponent implements OnInit {
                 service: order.service ?? [],
                 selected: false,
               }));
-              this.updateAllOrders(newOrders);
-              this.orders = newOrders;
               this.totalPages = data.totalPages;
             } else {
-              console.error('Ответ сервера не содержит данных заказов.');
+              console.warn('No orders returned in response.');
               this.hasOrders = false;
-              this.orders = []; // Ensure orders list is empty
+              this.orders = [];
               this.totalPages = 0;
             }
+            this.cdRef.markForCheck(); // Trigger UI refresh
           },
           error: (error: any) => {
-            console.error('Произошла ошибка при загрузке заказов!', error);
+            console.error('Error while fetching orders:', error);
             this.hasOrders = false;
-            this.orders = []; // Ensure orders list is empty
+            this.orders = [];
             this.totalPages = 0;
           },
         });
@@ -154,17 +219,6 @@ export class ActiveComponent implements OnInit {
       console.error('UUID пользователя не найден.');
       this.hasOrders = false;
     }
-  }
-
-  private updateAllOrders(newOrders: Order[]): void {
-    newOrders.forEach((order) => {
-      const match = this.orders.find((o) => o.uuid === order.uuid);
-      if (match) {
-        order.selected = match.selected;
-      } else {
-        this.orders.push(order);
-      }
-    });
   }
 
   private mapStatus(status: string): string {

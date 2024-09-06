@@ -60,6 +60,7 @@ import {
   TuiComboBoxModule,
   TuiInputRangeModule,
   TuiToggleModule,
+  TuiHighlightModule,
 } from '@taiga-ui/kit';
 import {
   TuiDropdownMobileModule,
@@ -109,6 +110,7 @@ import { CommonModule } from '@angular/common';
     TuiCheckboxLabeledModule,
     TuiNotificationModule,
     TuiPaginationModule,
+    TuiHighlightModule,
     TuiSvgModule,
     TuiScrollbarModule,
     TuiTableModule,

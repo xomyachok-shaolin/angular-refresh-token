@@ -1,3 +1,47 @@
+<div class="filters">
+  <form [formGroup]="form">
+    
+    <tui-multi-select
+      placeholder="Услуги"
+      formControlName="selectedServices"
+      tuiTextfieldSize="m"
+      [tuiTextfieldLabelOutside]="true"
+      [tagValidator]="tagValidator"
+      [(search)]="search"
+    >
+      <tui-data-list-wrapper
+        *tuiDataList
+        tuiMultiSelectGroup
+        [items]="filterServices(search)"
+      ></tui-data-list-wrapper>
+    </tui-multi-select>
+
+    <tui-input-date-range
+      formControlName="dateRange"
+      placeholder="Период"
+    ></tui-input-date-range>
+
+    <tui-multi-select
+      placeholder="Статус"
+      formControlName="selectedStatuses"
+      [tuiTextfieldLabelOutside]="true"
+      [tagValidator]="tagValidator"
+      [(search)]="search"
+    >
+      <tui-data-list-wrapper
+        *tuiDataList
+        tuiMultiSelectGroup
+        [items]="filterStatuses(search)"
+      ></tui-data-list-wrapper>
+    </tui-multi-select>
+    <tui-input
+    tuiTextfieldIconLeft="tuiIconSearch"
+    formControlName="searchAll">
+    Поиск
+    </tui-input>
+  </form>
+</div>
+
 <div class="order-table" *ngIf="hasOrders; else noOrders">
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>
@@ -5,7 +49,10 @@
       <thead>
         <tr tuiThGroup>
           <th tuiTh>
-            <tui-checkbox [ngModel]="checked" (ngModelChange)="onCheck($event)"></tui-checkbox>
+            <tui-checkbox
+              [ngModel]="checked"
+              (ngModelChange)="onCheck($event)"
+            ></tui-checkbox>
           </th>
           <th tuiTh>Номер</th>
           <th tuiTh>Тип</th>
@@ -16,30 +63,59 @@
         </tr>
       </thead>
       <tbody tuiTbody>
-        <tr tui-table__tr *ngFor="let order of orders" class="tui-table__tr tui-table__tr_border_top">
+        <tr
+          tui-table__tr
+          *ngFor="let order of orders"
+          class="tui-table__tr tui-table__tr_border_top"
+        >
           <td class="tui-table__td tui-table__td_align_center">
             <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
           </td>
           <td class="tui-table__td tui-table__td_align_center">
-            <span>Заказ {{ order.orderNumber }}</span><br>
-            <span class="secondary-text">Договор {{ order.contractNumber }}</span>
+            <span>Заказ {{ order.orderNumber }}</span
+            ><br />
+            <span class="secondary-text"
+              >Договор {{ order.contractNumber }}</span
+            >
           </td>
           <td class="tui-table__td tui-table__td_align_center">
             <div>{{ getServiceTitles(order.service ?? []) }}</div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">{{ order.execution | date: 'dd.MM.yyyy' }}</td>
           <td class="tui-table__td tui-table__td_align_center">
-            <div [class]="{'completed': order.executionStatus === 'Выполнено', 'processing': order.executionStatus === 'В обработке', 'denied': order.executionStatus === 'Отказано', 'basket': order.executionStatus === 'Не оплачено'}">
+            {{ order.execution | date : "dd.MM.yyyy" }}
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            <div
+              [class]="{
+                completed: order.executionStatus === 'Выполнено',
+                processing: order.executionStatus === 'В обработке',
+                denied: order.executionStatus === 'Отказано',
+                basket: order.executionStatus === 'Не оплачено'
+              }"
+            >
               {{ order.executionStatus }}
             </div>
           </td>
           <td class="tui-table__td tui-table__td_align_center">
-            <div>{{ order.cost | number:'1.2-2' }} ₽</div>
+            <div>{{ order.cost | number : "1.2-2" }} ₽</div>
             <div>{{ order.paymentStatus }}</div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center tui-table__td_last">
+          <td
+            class="tui-table__td tui-table__td_align_center tui-table__td_last"
+          >
             <tui-hosted-dropdown topRight [content]="menuContent">
-              <button appearance="flat" icon="tuiIconMoreVerticalLarge" shape="rounded" size="s" title="More Actions" tuiDropdownSelection tuiDropdownSelectionPosition="selection" tuiIconButton type="button" (click)="onClick()"></button>
+              <button
+                appearance="flat"
+                icon="tuiIconMoreVerticalLarge"
+                shape="rounded"
+                size="s"
+                title="More Actions"
+                tuiDropdownSelection
+                tuiDropdownSelectionPosition="selection"
+                tuiIconButton
+                type="button"
+                (click)="onClick()"
+              ></button>
             </tui-hosted-dropdown>
             <ng-template #menuContent>
               <tui-data-list>
@@ -52,12 +128,15 @@
         </tr>
       </tbody>
     </table>
-    <tui-pagination size="m" [length]="totalPages" [(ngModel)]="currentPage" (indexChange)="fetchOrders($event)"></tui-pagination>
+    <tui-pagination
+      size="m"
+      [length]="totalPages"
+      [index]="currentPage"
+      (indexChange)="fetchOrders($event)"
+    ></tui-pagination>
   </tui-scrollbar>
 </div>
 
 <ng-template #noOrders>
-  <div class="tui-text_body-s">
-    Записей с заказами не найдено
-  </div>
+  <div class="tui-text_body-s">Записей с заказами не найдено</div>
 </ng-template>

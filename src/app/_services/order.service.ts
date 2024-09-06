@@ -34,10 +34,10 @@ export class OrderService {
     sortField: string,
     sortDirection: string,
     archive: boolean,
-    executionStatuses?: string[],  // Optional statuses filter
-    serviceList?: string[],        // Optional service list filter
-    startDate?: Date,              // Optional start date filter
-    endDate?: Date                 // Optional end date filter
+    executionStatuses?: string[],  
+    serviceList?: string[],        
+    startDate?: Date,              
+    endDate?: Date    
   ): Observable<OrderResponse> {
     let params = new HttpParams()
       .set('uuid', uuid)
@@ -47,26 +47,18 @@ export class OrderService {
       .set('sortDirection', sortDirection)
       .set('archive', archive.toString());
 
-    // Add filters if provided
-    if (executionStatuses && executionStatuses.length > 0) {
-      executionStatuses.forEach((status, index) => {
-        params = params.append(`executionStatuses[${index}]`, status);
-      });
-    }
-    
-    if (serviceList && serviceList.length > 0) {
-      serviceList.forEach((service, index) => {
-        params = params.append(`serviceList[${index}]`, service);
-      });
-    }
-
-    if (startDate) {
-      params = params.set('startDate', startDate.toISOString().split('T')[0]); // Format date as yyyy-MM-dd
-    }
-
-    if (endDate) {
-      params = params.set('endDate', endDate.toISOString().split('T')[0]); // Format date as yyyy-MM-dd
-    }
+      if (executionStatuses?.length) {
+        params = params.set('statuses', executionStatuses.join(','));
+      }
+      if (serviceList?.length) {
+        params = params.set('serviceList', serviceList.join(','));
+      }
+      if (startDate) {
+        params = params.set('startDate', startDate.toISOString().split('T')[0]);
+      }
+      if (endDate) {
+        params = params.set('endDate', endDate.toISOString().split('T')[0]);
+      }
 
     return this.http.get<OrderResponse>('/api/order/pagination/client', {
       params,

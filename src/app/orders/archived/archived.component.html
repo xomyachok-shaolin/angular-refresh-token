@@ -1,63 +1,99 @@
 <div class="order-table" *ngIf="hasOrders; else noOrders">
-    <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
-      <form [formGroup]="form"></form>
-      <table tuiTable class="table" [columns]="columns">
-        <thead>
-          <tr tuiThGroup>
-            <th tuiTh>
-              <tui-checkbox [ngModel]="checked" (ngModelChange)="onCheck($event)"></tui-checkbox>
-            </th>
-            <th tuiTh>Номер</th>
-            <th tuiTh>Тип</th>
-            <th tuiTh>Дата оформления</th>
-            <th tuiTh>Статус выполнения</th>
-            <th tuiTh>Стоимость, статус оплаты</th>
-            <th tuiTh></th>
-          </tr>
-        </thead>
-        <tbody tuiTbody>
-          <tr tui-table__tr *ngFor="let order of orders" class="tui-table__tr tui-table__tr_border_top">
-            <td class="tui-table__td tui-table__td_align_center">
-              <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
-            </td>
-            <td class="tui-table__td tui-table__td_align_center">
-              <span>Заказ {{ order.orderNumber }}</span><br>
-              <span class="secondary-text">Договор {{ order.contractNumber }}</span>
-            </td>
-            <td class="tui-table__td tui-table__td_align_center">
-              <div>{{ getServiceTitles(order.service ?? []) }}</div>
-            </td>
-            <td class="tui-table__td tui-table__td_align_center">{{ order.execution | date: 'dd.MM.yyyy' }}</td>
-            <td class="tui-table__td tui-table__td_align_center">
-              <div [class]="{'completed': order.executionStatus === 'Выполнено', 'processing': order.executionStatus === 'В обработке', 'denied': order.executionStatus === 'Отказано', 'basket': order.executionStatus === 'Не оплачено'}">
-                {{ order.executionStatus }}
-              </div>
-            </td>
-            <td class="tui-table__td tui-table__td_align_center">
-              <div>{{ order.cost | number:'1.2-2' }} ₽</div>
-              <div>{{ order.paymentStatus }}</div>
-            </td>
-            <td class="tui-table__td tui-table__td_align_center tui-table__td_last">
-              <tui-hosted-dropdown topRight [content]="menuContent">
-                <button appearance="flat" icon="tuiIconMoreVerticalLarge" shape="rounded" size="s" title="More Actions" tuiDropdownSelection tuiDropdownSelectionPosition="selection" tuiIconButton type="button" (click)="onClick()"></button>
-              </tui-hosted-dropdown>
-              <ng-template #menuContent>
-                <tui-data-list>
-                  <button tuiOption>Подробнее о заказе</button>
-                  <button tuiOption>Удалить заказ</button>
-                </tui-data-list>
-              </ng-template>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <tui-pagination size="m" [length]="totalPages" [(ngModel)]="currentPage" (indexChange)="fetchOrders($event)"></tui-pagination>
-    </tui-scrollbar>
-  </div>
-  
-  <ng-template #noOrders>
-    <div class="tui-text_body-s">
-      Записей с архивными заказами не найдено
-    </div>
-  </ng-template>
-  
+  <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
+    <form [formGroup]="form"></form>
+    <table tuiTable class="table" [columns]="columns">
+      <thead>
+        <tr tuiThGroup>
+          <th tuiTh>
+            <tui-checkbox
+              [ngModel]="checked"
+              (ngModelChange)="onCheck($event)"
+            ></tui-checkbox>
+          </th>
+          <th tuiTh>Номер</th>
+          <th tuiTh>Тип</th>
+          <th tuiTh>Дата оформления</th>
+          <th tuiTh>Статус выполнения</th>
+          <th tuiTh>Стоимость, статус оплаты</th>
+          <th tuiTh></th>
+        </tr>
+      </thead>
+      <tbody tuiTbody>
+        <tr
+          tui-table__tr
+          *ngFor="let order of orders"
+          class="tui-table__tr tui-table__tr_border_top"
+        >
+          <td class="tui-table__td tui-table__td_align_center">
+            <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            <span>Заказ {{ order.orderNumber }}</span
+            ><br />
+            <span class="secondary-text"
+              >Договор {{ order.contractNumber }}</span
+            >
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            <div>{{ getServiceTitles(order.service ?? []) }}</div>
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            {{ order.execution | date : "dd.MM.yyyy" }}
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            <div
+              [class]="{
+                completed: order.executionStatus === 'Выполнено',
+                processing: order.executionStatus === 'В обработке',
+                denied: order.executionStatus === 'Отказано',
+                basket: order.executionStatus === 'Не оплачено'
+              }"
+            >
+              {{ order.executionStatus }}
+            </div>
+          </td>
+          <td class="tui-table__td tui-table__td_align_center">
+            <div>{{ order.cost | number : "1.2-2" }} ₽</div>
+            <div>{{ order.paymentStatus }}</div>
+          </td>
+          <td
+            class="tui-table__td tui-table__td_align_center tui-table__td_last"
+          >
+            <tui-hosted-dropdown topRight [content]="menuContent">
+              <button
+                appearance="flat"
+                icon="tuiIconMoreVerticalLarge"
+                shape="rounded"
+                size="s"
+                title="More Actions"
+                tuiDropdownSelection
+                tuiDropdownSelectionPosition="selection"
+                tuiIconButton
+                type="button"
+                (click)="onClick()"
+              ></button>
+            </tui-hosted-dropdown>
+            <ng-template #menuContent>
+              <tui-data-list>
+                <button tuiOption>Подробнее о заказе</button>
+                <button tuiOption>Скачать счет</button>
+                <button tuiOption>Вернуть из архива</button>
+                <button tuiOption>Удалить заказ</button>
+              </tui-data-list>
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <tui-pagination
+      size="m"
+      [length]="totalPages"
+      [(ngModel)]="currentPage"
+      (indexChange)="fetchOrders($event)"
+    ></tui-pagination>
+  </tui-scrollbar>
+</div>
+
+<ng-template #noOrders>
+  <div class="tui-text_body-s">Записей с архивными заказами не найдено</div>
+</ng-template>

@@ -1,17 +1,16 @@
 <div class="filters">
-  <form [formGroup]="form">
-    
+  <form [formGroup]="form" class="filter-row">
     <tui-multi-select
       placeholder="Услуги"
       formControlName="selectedServices"
-      tuiTextfieldSize="m"
+      class="b-form"
       [tuiTextfieldLabelOutside]="true"
-      [tagValidator]="tagValidator"
-      [(search)]="search"
     >
+      Услуги
       <tui-data-list-wrapper
         *tuiDataList
         tuiMultiSelectGroup
+        [size]="'s'"
         [items]="filterServices(search)"
       ></tui-data-list-wrapper>
     </tui-multi-select>
@@ -19,7 +18,10 @@
     <tui-input-date-range
       formControlName="dateRange"
       placeholder="Период"
-    ></tui-input-date-range>
+      class="b-form"
+    >
+      Период
+    </tui-input-date-range>
 
     <tui-multi-select
       placeholder="Статус"
@@ -27,25 +29,33 @@
       [tuiTextfieldLabelOutside]="true"
       [tagValidator]="tagValidator"
       [(search)]="search"
+      class="b-form"
     >
+      Статус
       <tui-data-list-wrapper
         *tuiDataList
         tuiMultiSelectGroup
         [items]="filterStatuses(search)"
       ></tui-data-list-wrapper>
     </tui-multi-select>
-    <tui-input
-    tuiTextfieldIconLeft="tuiIconSearch"
-    formControlName="searchAll">
-    Поиск
-    </tui-input>
+
+    <div class="search-container">
+      <tui-input
+        tuiTextfieldIconLeft="tuiIconSearch"
+        formControlName="searchAll"
+        class="search-input"
+      >
+        Поиск
+      </tui-input>
+    </div>
   </form>
 </div>
+
 
 <div class="order-table" *ngIf="hasOrders; else noOrders">
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>
-    <table tuiTable class="table" [columns]="columns">
+    <table size="l" tuiTable class="table" [columns]="columns">
       <thead>
         <tr tuiThGroup>
           <th tuiTh>
@@ -120,6 +130,7 @@
             <ng-template #menuContent>
               <tui-data-list>
                 <button tuiOption>Подробнее о заказе</button>
+                <button tuiOption>Скачать счет</button>
                 <button tuiOption>Поместить в архив</button>
                 <button tuiOption>Удалить заказ</button>
               </tui-data-list>
@@ -138,5 +149,5 @@
 </div>
 
 <ng-template #noOrders>
-  <div class="tui-text_body-s">Записей с заказами не найдено</div>
+  <div class="tui-text_body-m">Записей с заказами не найдено</div>
 </ng-template>

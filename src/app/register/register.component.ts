@@ -4,7 +4,7 @@ import { AuthService } from '../_services/auth.service';
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css']
+  styleUrls: ['./register.component.less']
 })
 export class RegisterComponent {
   form: any = {
@@ -15,6 +15,7 @@ export class RegisterComponent {
   isSuccessful = false;
   isSignUpFailed = false;
   errorMessage = '';
+  showErrorNotification = false;
 
   constructor(private authService: AuthService) { }
 
@@ -26,11 +27,17 @@ export class RegisterComponent {
         console.log(data);
         this.isSuccessful = true;
         this.isSignUpFailed = false;
+        this.showErrorNotification = false;
       },
       error: err => {
         this.errorMessage = err.error.message;
         this.isSignUpFailed = true;
+        this.showErrorNotification = true;
       }
     });
+  }
+
+  onCloseNotification(): void {
+    this.showErrorNotification = false;
   }
 }

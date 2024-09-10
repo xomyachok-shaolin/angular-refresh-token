@@ -1,51 +1,61 @@
-<div class="col-md-12">
-  <div class="card card-container">
-    <img id="profile-img" src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" class="profile-img-card" />
-    <div *ngIf="!isSuccessful; else registrationSuccess">
-      <form name="form" (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
-        <div class="form-group">
-          <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel">
-            <input tuiTextfield placeholder="Username" />
+<tui-root>
+  <div class="col-md-12">
+    <div class="card card-container">
+      <h2 tuiTextfield size="xl" class="text-header">Регистрация</h2>
+      <form (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
+        <div class="form-group input-username">
+          <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel"
+            [tuiTextfieldCleaner]="true" 
+            [ngClass]="{'is-invalid': f.submitted && username.errors}">
+            Имя пользователя
+            <input tuiTextfield type="text" />
           </tui-input>
-          <div *ngIf="username.errors && (username.dirty || username.touched)" class="invalid-feedback">
-            <div *ngIf="username.errors['required']">Username is required.</div>
-            <div *ngIf="username.errors['minlength']">Username must be at least 3 characters.</div>
+          <div *ngIf="username.errors && username.dirty" class="invalid-feedback">
+            <div *ngIf="username.errors['required']">Обязательно к заполнению!</div>
+            <div *ngIf="username.errors['minlength']">Имя пользователя должно быть не менее 3 символов</div>
           </div>
         </div>
 
-        <div class="form-group">
-          <tui-input [(ngModel)]="form.email" name="email" required #email="ngModel">
-            <input tuiTextfield type="email" placeholder="Enter your email"/>
+        <div class="form-group input-email">
+          <tui-input [(ngModel)]="form.email" name="email" required #email="ngModel"
+            [tuiTextfieldCleaner]="true" 
+            [ngClass]="{'is-invalid': f.submitted && email.errors}">
+            Электронная почта
+            <input tuiTextfield type="email" />
           </tui-input>
-          <div *ngIf="email.errors && (email.dirty || email.touched)" class="invalid-feedback">
-            <div *ngIf="email.errors['required']">Email is required</div>
-            <div *ngIf="email.errors['email']">Email must be a valid email address</div>
+          <div *ngIf="email.errors && email.dirty" class="invalid-feedback">
+            <div *ngIf="email.errors['required']">Обязательно к заполнению!</div>
+            <div *ngIf="email.errors['email']">Введите действительный адрес электронной почты</div>
           </div>
         </div>
 
-        <div class="form-group">
-          <tui-input-password [(ngModel)]="form.password" name="password" required minlength="6"
-            #password="ngModel">
-          </tui-input-password>
-          <div *ngIf="password.errors && (password.dirty || password.touched)" class="invalid-feedback">
-            <div *ngIf="password.errors['required']">Password is required</div>
-            <div *ngIf="password.errors['minlength']">Password must be at least 6 characters</div>
+        <div class="form-group input-password">
+          <tui-input [(ngModel)]="form.password" name="password" required #password="ngModel"
+            [tuiTextfieldCleaner]="true" 
+            [ngClass]="{'is-invalid': f.submitted && password.errors}">
+            Пароль
+            <input tuiTextfield type="password" />
+          </tui-input>
+          <div *ngIf="password.errors && password.dirty" class="invalid-feedback">
+            <div *ngIf="password.errors['required']">Обязательно к заполнению!</div>
+            <div *ngIf="password.errors['minlength']">Пароль должен быть не менее 6 символов</div>
           </div>
         </div>
 
-        <div class="form-group">
-          <button tuiButton type="submit" appearance="primary">Sign Up</button>
-        </div>
-
-        <div *ngIf="f.submitted && isSignUpFailed" class="alert alert-warning">
-          Signup failed!<br>{{ errorMessage }}
-        </div>
+        <button size="l" appearance="primary" tuiButton type="submit">
+          Регистрация
+        </button>
       </form>
+
+      <tui-notification *ngIf="showErrorNotification" status="error" [hasIcon]="false" (close)="onCloseNotification()">
+        {{ errorMessage }}
+      </tui-notification>
+
+      <div *ngIf="isSuccessful">
+        <tui-notification status="success">
+          Вы успешно зарегистрировались!
+        </tui-notification>
+      </div>
     </div>
-
-    <ng-template #registrationSuccess>
-      <div class="alert alert-success">Your registration is successful!</div>
-    </ng-template>
-
   </div>
-</div>
+</tui-root>

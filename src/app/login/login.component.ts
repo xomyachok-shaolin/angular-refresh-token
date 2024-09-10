@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AuthService } from '../_services/auth.service';
 import { StorageService } from '../_services/storage.service';
+import { Router } from '@angular/router'; // Добавляем Router
+import { EventBusService } from '../_shared/event-bus.service';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.less']
+  styleUrls: ['./login.component.less'],
 })
 export class LoginComponent implements OnInit {
   form: any = {
@@ -19,7 +21,13 @@ export class LoginComponent implements OnInit {
   roles: string[] = [];
   showErrorNotification = false;
 
-  constructor(private authService: AuthService, private storageService: StorageService) { }
+  constructor(
+    private authService: AuthService,
+    private storageService: StorageService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private eventBusService: EventBusService
+  ) {}
 
   ngOnInit(): void {
     if (this.storageService.isLoggedIn()) {
@@ -32,23 +40,26 @@ export class LoginComponent implements OnInit {
     const { username, password } = this.form;
 
     this.authService.login(username, password).subscribe({
-      next: data => {
+      next: (data) => {
         this.storageService.saveUser(data);
         this.isLoginFailed = false;
         this.isLoggedIn = true;
         this.roles = this.storageService.getUser().roles;
-        this.reloadPage();
-      },
-      error: err => {
+        
+        // Уведомляем приложение о входе
+        this.eventBusService.emit({ name: 'login', value: { user: this.storageService.getUser() } });
+
+        // Перенаправление в личный кабинет
+        this.router.navigate(['/personal-cabinet']).then(() => {
+          this.cdr.detectChanges(); // Обновление после перехода на другую страницу
+        });
+         },
+      error: (err) => {
         this.errorMessage = err.error.message || 'Ошибка при входе';
         this.isLoginFailed = true;
         this.showErrorNotification = true;
-      }
+      },
     });
-  }
-
-  reloadPage(): void {
-    window.location.reload();
   }
 
   onCloseNotification(): void {

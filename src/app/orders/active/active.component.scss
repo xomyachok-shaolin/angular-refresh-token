@@ -55,25 +55,34 @@ th {
     background: #fddf34;
 }
 
-.filter-bar {
+.filters {
+    width: 100%;
+    margin-top: 24px;
+    margin-bottom: 12px;
+  }
+  
+  .filter-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 10px;
-    background: #FFFFFF;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.filter-section {
+    justify-content: space-between;
+    gap: 10px; /* Промежуток между фильтрами */
+  }
+  
+  .b-form {
+    flex: 1; /* Каждый элемент фильтра будет равномерно занимать пространство */
+  }
+  
+  .search-container {
     display: flex;
-    gap: 10px; /* Spacing between filters */
-}
-
-.search-section {
     flex-grow: 1;
-    display: flex;
     justify-content: flex-end;
-}
+  }
+  
+  .search-input {
+    width: 100%;
+    max-width: 250px; /* Ширина поля поиска */
+  }
+  
 
 /* Style adjustments for smaller screens */
 @media (max-width: 768px) {

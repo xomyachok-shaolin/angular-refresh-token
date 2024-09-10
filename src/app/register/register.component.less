@@ -24,23 +24,21 @@ tui-input {
   width: 100%;
 
   input {
-    // padding: 15px;
     box-sizing: border-box;
   }
 }
 
 .invalid-feedback {
   color: red;
-  // margin-bottom: 30px;      
 }
 
-.input-username { 
+.input-username, .input-email, .input-password {
   margin-bottom: 42px;             
 }
 
-.input-password { 
-  margin-bottom: 16px;             
-}
+// .input-password {
+//   margin-bottom: 16px;             
+// }
 
 tui-checkbox-labeled {
   color: rgba(25, 28, 48, 0.9);
@@ -52,10 +50,6 @@ tui-checkbox-labeled {
   line-height: 16px;
 }
 
-// tui-checkbox {
-//   border-radius: 75%;
-// }
-
 button {
   position: relative;
   width: 100%;
@@ -63,33 +57,26 @@ button {
   margin-bottom: 60px;
 }
 
-
 .card {
   position: relative;
   width: 100%;
   max-width: 486px;
-  height: auto;
+  height: auto; 
   background: #fff;
   padding: 56px 83px;
   box-sizing: border-box;
   margin: 0 auto;
   margin-top: 10%;
-  // -moz-border-radius: 2px;
-  // -webkit-border-radius: 2px;
-  // border-radius: 2px;
-  // -moz-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
-  // -webkit-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
-  // box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
 }
-
-
 
 .profile-img-card {
   width: 96px;
   height: 96px;
   margin: 0 auto 10px;
   display: block;
-  -moz-border-radius: 50%;
-  -webkit-border-radius: 50%;
   border-radius: 50%;
+}
+
+tui-notification {
+  margin-top: 20px;
 }

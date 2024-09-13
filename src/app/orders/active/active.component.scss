@@ -31,7 +31,6 @@ th {
 .basket {
     display: flex;
     align-items: center;
-    text-transform: capitalize;
  
     &:before {
         content: '';
@@ -56,7 +55,7 @@ th {
 }
 
 .filters {
-    width: 100%;
+    width: auto;
     margin-top: 24px;
     margin-bottom: 12px;
   }
@@ -99,4 +98,8 @@ th {
 
 .secondary-text {
     color: #1B1F3BA6;
+}
+
+tui-dropdown {
+    display: table !important;
 }

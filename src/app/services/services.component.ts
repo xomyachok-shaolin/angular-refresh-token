@@ -346,7 +346,7 @@ export class ServicesComponent implements OnInit {
   }
 
   fetchRestrictionPolygons(bbox: string): void {
-    const url = '/geoserver/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=56.38739152864383,55.30553234524936,56.41610580200159,55.34530687203605';
+    const url = '/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=56.38739152864383,55.30553234524936,56.41610580200159,55.34530687203605';
     this.http.get<any>(url).subscribe({
       next: (data) => {
         this.restrictionPolygon = this.convertGeoJsonToPolygon(data);

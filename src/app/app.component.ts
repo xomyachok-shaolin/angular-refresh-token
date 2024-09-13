@@ -29,19 +29,7 @@ export class AppComponent {
   username?: string;
 
   eventBusSub?: Subscription;
-
-  open = false;
-
-  onClick(): void {
-    setTimeout(() => {
-      this.open = !this.open;
-    }, 200);
-  }
-
-  openPersonalCabinet(): void {
-    this.index2 = 2;
-    this.open = true;
-  }
+  dropdownOpen = false;
 
   constructor(
     private storageService: StorageService,
@@ -49,52 +37,52 @@ export class AppComponent {
     private eventBusService: EventBusService,
     private router: Router,
     private alertService: TuiAlertService,
-    private cdr: ChangeDetectorRef // Добавляем ChangeDetectorRef
+    private cdr: ChangeDetectorRef
   ) {
     this.router.events
-      .pipe(
-        filter(
-          (event: Event): event is NavigationEnd =>
-            event instanceof NavigationEnd
-        )
-      )
+      .pipe(filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.isServicesRoute = event.urlAfterRedirects.includes('/services');
 
-        if (event.urlAfterRedirects.includes('/personal-cabinet')) {
-          this.index2 = 2;
-          this.open = false;
+        // Если находимся в личном кабинете, активируем вкладку с индексом 2
+        if (event.urlAfterRedirects.includes('/personal-cabinet') || event.urlAfterRedirects.includes('/orders')) {
+          this.index2 = 2; // Вкладка с иконкой пользователя
+        } else if (event.urlAfterRedirects.includes('/cart')) {
+          this.index2 = 0; // Вкладка с корзиной
+        } else if (event.urlAfterRedirects.includes('/personal-cabinet/notifications')) {
+          this.index2 = 1; // Вкладка с уведомлениями
         }
 
-        this.open = false;
-        this.cdr.detectChanges(); // Обновляем состояние после маршрутизации
+        this.dropdownOpen = false;
+        this.cdr.detectChanges();
       });
   }
 
   ngOnInit(): void {
-    this.checkLoginState(); // Обновляем состояние при запуске приложения
+    this.checkLoginState();
 
     this.eventBusSub = this.eventBusService.on('logout', () => {
       this.logout();
     });
 
-    // Подписываемся на событие входа, чтобы обновить состояние после логина
     this.eventBusService.on('login', () => {
       this.checkLoginState();
       this.cdr.detectChanges();
     });
   }
 
-  // Метод для обновления состояния вкладок
+  toggleDropdown(open: boolean): void {
+    this.dropdownOpen = open;
+    this.cdr.detectChanges();
+  }
+
   checkLoginState(): void {
     this.isLoggedIn = this.storageService.isLoggedIn();
     if (this.isLoggedIn) {
       const user = this.storageService.getUser();
       this.roles = user.roles;
-
       this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
       this.showModeratorBoard = this.roles.includes('ROLE_MODERATOR');
-
       this.username = user.username;
     }
   }
@@ -102,22 +90,15 @@ export class AppComponent {
   logout(): void {
     this.authService.logout().subscribe({
       next: (res) => {
-        console.log(res);
-  
-        // Очищаем данные сессии
         this.storageService.clean();
-        this.isLoggedIn = false;  // Явно устанавливаем флаг авторизации
-  
-        // Редирект на страницу авторизации после выхода
+        this.isLoggedIn = false;
         this.router.navigate(['/login']).then(() => {
-          this.alertService
-            .open('Вы успешно вышли из системы.', { status: 'success' })
-            .subscribe();
+          this.alertService.open('Вы успешно вышли из системы.', { status: 'success' }).subscribe();
         });
       },
       error: (err) => {
-        console.log(err);
+        console.error(err);
       },
     });
-  }  
+  }
 }

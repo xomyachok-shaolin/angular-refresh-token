@@ -3,6 +3,7 @@ import { AuthService } from '../_services/auth.service';
 import { StorageService } from '../_services/storage.service';
 import { Router } from '@angular/router'; // Добавляем Router
 import { EventBusService } from '../_shared/event-bus.service';
+import { NgForm } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
@@ -36,9 +37,13 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
+  onSubmit(form: NgForm): void {
+    if (form.invalid) {
+      return;  // Прерываем выполнение, если форма невалидна
+    }
+  
     const { username, password } = this.form;
-
+  
     this.authService.login(username, password).subscribe({
       next: (data) => {
         this.storageService.saveUser(data);
@@ -48,12 +53,12 @@ export class LoginComponent implements OnInit {
         
         // Уведомляем приложение о входе
         this.eventBusService.emit({ name: 'login', value: { user: this.storageService.getUser() } });
-
+  
         // Перенаправление в личный кабинет
         this.router.navigate(['/personal-cabinet']).then(() => {
           this.cdr.detectChanges(); // Обновление после перехода на другую страницу
         });
-         },
+      },
       error: (err) => {
         this.errorMessage = err.error.message || 'Ошибка при входе';
         this.isLoginFailed = true;
@@ -61,6 +66,7 @@ export class LoginComponent implements OnInit {
       },
     });
   }
+  
 
   onCloseNotification(): void {
     this.showErrorNotification = false;

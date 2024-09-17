@@ -1,8 +1,4 @@
-@import '@taiga-ui/core/styles/taiga-ui-local.less';
-
-tui-data-list {
- align-items: start;
-}
+@import "@taiga-ui/core/styles/taiga-ui-local.less";
 
 .custom-header {
   margin-bottom: 10px;
@@ -17,139 +13,160 @@ tui-data-list {
   .left-section {
     flex: 0 0 auto;
   }
-  
+
   .center-section {
     flex: 2;
     text-align: center;
     margin-right: 10px;
   }
-  
+
   .right-section {
     flex: 2;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 24px;
+
+    .b-form {
+      flex: 1;
+      min-width: 225px;
+    }
+
+    .icons-container {
+      display: flex;
+      align-items: center;
+      // gap: 24px;
+
+      .icon-profile {
+        color: #526ed3;
+        cursor: pointer;
+      }
+
+      .user-menu {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 20px);
+          right: 0;
+          background-color: rgba(255, 255, 255, 0.95);
+          border: 1px solid #ccc;
+          box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.12);
+          border-radius: 8px;
+          z-index: 1000;
+          width: 200px;
+          overflow: hidden;
+          padding-right: 8px;
+          box-sizing: border-box;
+
+          tui-data-list {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+
+            button {
+              display: flex;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 8px;
+              width: 100%;
+              padding: 8px 12px;
+              text-align: left;
+              box-sizing: border-box;
+              border-radius: 6px;
+              background: none;
+              border: none;
+              cursor: pointer;
+
+              &:hover,
+              &:focus {
+                background-color: rgba(82, 110, 211, 0.1);
+                outline: none;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   .logo-img {
-    width: 136px; 
+    width: 136px;
     height: 64px;
-    margin-right: 24px; 
-  }
-
-  .right-section {
-    display: flex;
-    gap: 24px; 
-  }
-
-  tui-input {
-    min-width: 225px;
-    flex: 1;
-  }
-
-  ::ng-deep .menu2 .t-underline {
-    position: absolute;
-    bottom: 0;
-    margin-left: 6px;
-    width: 12px !important;
-  }
-
-  tui-svg {
-    color: #526ED3;
+    margin-right: 24px;
   }
 
   tui-tabs {
     box-shadow: none;
     position: relative;
     height: 68px;
+
+    .t-underline {
+      position: absolute;
+      bottom: 0;
+      margin-left: 6px;
+      width: 12px !important;
+    }
   }
 }
 
 /* Media Queries for Responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 840px) {
   .custom-header {
     flex-direction: column;
     align-items: center;
-  }
 
-  .left-section, .right-section {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    text-align: center;
-    margin-top: 10px;
-  }
+    .left-section,
+    .right-section {
+      width: 100%;
+      text-align: center;
+      margin-top: 10px;
+    }
 
-  tui-input {
-    width: 100%;
-    margin-top: 10px;
-  }
+    .center-section,
+    .right-section {
+      margin-right: 0 !important;
+    }
+
+    .right-section {
+      flex-direction: column;
+      gap: 16px;
+
+      .b-form {
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
 
     .logo-img {
-    width: 120px;
-    height: 56px;
-    margin-right: 0 !important;
-  }
+      width: 120px;
+      height: 56px;
+      margin-right: 0 !important;
+    }
 
-  .center-section {
-    margin-right: 0 !important;
-  }
+    .icons-container {
+      flex-direction: row;
+      justify-content: center;
+      // gap: 16px;
+    }
 
-  .right-section {
-    gap: 16px;
+    .user-menu .dropdown-menu {
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 320px;
+      top: calc(100% + 20px);
+    }
   }
 }
 
+/* Sidebar Styles */
 .sidebar {
   width: 100%;
   padding: 20px;
-  background: #F7F7F7;
-  border-right: 1px solid #EDEDED;
-}
-
-.icon-profile {
-  pointer-events: auto; 
-}
-
-.dropdown-menu {
-  position: fixed;
-  top: 50px;
-  right: 10px;
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid #ccc;
-  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  z-index: 1000;
-  width: 170px;
-  overflow: hidden;
-  padding-right: 8px;
-  box-sizing: border-box;
-}
-
-.dropdown-menu button {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px; /* Слегка увеличиваем padding */
-  text-align: left;
-  box-sizing: border-box;
-  border-radius: 6px;
-}
-
-.dropdown-menu button:focus, 
-.dropdown-menu button:hover {
-  background-color: rgba(82, 110, 211, 0.1);
-  border-radius: 6px; /* Делаем закругление больше для симметрии */
-  outline: none;
-  padding: 8px 12px; /* Одинаковый padding по бокам */
-  box-sizing: border-box; 
-}
-
-.dropdown-menu tui-data-list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+  background: #f7f7f7;
+  border-right: 1px solid #ededed;
 }

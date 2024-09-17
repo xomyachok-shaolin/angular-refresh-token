@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { AuthService } from '../_services/auth.service';
+import { NgForm } from '@angular/forms';
 
 @Component({
   selector: 'app-register',
@@ -19,9 +20,13 @@ export class RegisterComponent {
 
   constructor(private authService: AuthService) { }
 
-  onSubmit(): void {
+  onSubmit(form: NgForm): void {
+    if (form.invalid) {
+      return;  // Прерываем выполнение, если форма невалидна
+    }
+  
     const { username, email, password } = this.form;
-
+  
     this.authService.register(username, email, password).subscribe({
       next: data => {
         console.log(data);
@@ -36,6 +41,7 @@ export class RegisterComponent {
       }
     });
   }
+  
 
   onCloseNotification(): void {
     this.showErrorNotification = false;

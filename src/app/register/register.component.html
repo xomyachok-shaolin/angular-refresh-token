@@ -2,50 +2,51 @@
   <div class="col-md-12">
     <div class="card card-container">
       <h2 tuiTextfield size="xl" class="text-header">Регистрация</h2>
-      <form (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
+      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
         <div class="form-group input-username">
           <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel"
-            [tuiTextfieldCleaner]="true" 
-            [ngClass]="{'is-invalid': f.submitted && username.errors}">
+            [tuiTextfieldCleaner]="true"
+            [ngClass]="{'is-invalid': f.submitted && username.invalid}">
             Имя пользователя
             <input tuiTextfield type="text" />
           </tui-input>
-          <div *ngIf="username.errors && username.dirty" class="invalid-feedback">
-            <div *ngIf="username.errors['required']">Обязательно к заполнению!</div>
-            <div *ngIf="username.errors['minlength']">Имя пользователя должно быть не менее 3 символов</div>
+          <div *ngIf="username.invalid && (username.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="username.errors?.['required']">Обязательно к заполнению!</div>
+            <div *ngIf="username.errors?.['minlength']">Имя пользователя должно быть не менее 3 символов</div>
           </div>
         </div>
-
+      
         <div class="form-group input-email">
-          <tui-input [(ngModel)]="form.email" name="email" required #email="ngModel"
-            [tuiTextfieldCleaner]="true" 
-            [ngClass]="{'is-invalid': f.submitted && email.errors}">
+          <tui-input [(ngModel)]="form.email" name="email" required email #email="ngModel"
+            [tuiTextfieldCleaner]="true"
+            [ngClass]="{'is-invalid': f.submitted && email.invalid}">
             Электронная почта
             <input tuiTextfield type="email" />
           </tui-input>
-          <div *ngIf="email.errors && email.dirty" class="invalid-feedback">
-            <div *ngIf="email.errors['required']">Обязательно к заполнению!</div>
-            <div *ngIf="email.errors['email']">Введите действительный адрес электронной почты</div>
+          <div *ngIf="email.invalid && (email.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="email.errors?.['required']">Обязательно к заполнению!</div>
+            <div *ngIf="email.errors?.['email']">Введите действительный адрес электронной почты</div>
           </div>
         </div>
-
+      
         <div class="form-group input-password">
-          <tui-input [(ngModel)]="form.password" name="password" required #password="ngModel"
-            [tuiTextfieldCleaner]="true" 
-            [ngClass]="{'is-invalid': f.submitted && password.errors}">
+          <tui-input [(ngModel)]="form.password" name="password" required minlength="6" #password="ngModel"
+            [tuiTextfieldCleaner]="true"
+            [ngClass]="{'is-invalid': f.submitted && password.invalid}">
             Пароль
             <input tuiTextfield type="password" />
           </tui-input>
-          <div *ngIf="password.errors && password.dirty" class="invalid-feedback">
-            <div *ngIf="password.errors['required']">Обязательно к заполнению!</div>
-            <div *ngIf="password.errors['minlength']">Пароль должен быть не менее 6 символов</div>
+          <div *ngIf="password.invalid && (password.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="password.errors?.['required']">Обязательно к заполнению!</div>
+            <div *ngIf="password.errors?.['minlength']">Пароль должен быть не менее 6 символов</div>
           </div>
         </div>
-
+      
         <button size="l" appearance="primary" tuiButton type="submit">
           Регистрация
         </button>
       </form>
+      
 
       <tui-notification *ngIf="showErrorNotification" status="error" [hasIcon]="false" (close)="onCloseNotification()">
         {{ errorMessage }}

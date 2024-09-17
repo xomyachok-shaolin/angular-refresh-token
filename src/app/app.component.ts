@@ -44,13 +44,17 @@ export class AppComponent {
       .subscribe((event: NavigationEnd) => {
         this.isServicesRoute = event.urlAfterRedirects.includes('/services');
 
-        // Если находимся в личном кабинете, активируем вкладку с индексом 2
-        if (event.urlAfterRedirects.includes('/personal-cabinet') || event.urlAfterRedirects.includes('/orders')) {
-          this.index2 = 2; // Вкладка с иконкой пользователя
-        } else if (event.urlAfterRedirects.includes('/cart')) {
-          this.index2 = 0; // Вкладка с корзиной
+        if (event.urlAfterRedirects.includes('/cart')) {
+          this.index2 = 0; // Shopping Cart Icon
         } else if (event.urlAfterRedirects.includes('/personal-cabinet/notifications')) {
-          this.index2 = 1; // Вкладка с уведомлениями
+          this.index2 = 1; // Bell Icon
+        } else if (
+          event.urlAfterRedirects.includes('/personal-cabinet') ||
+          event.urlAfterRedirects.includes('/orders')
+        ) {
+          this.index2 = 2; // User Icon
+        } else {
+          this.index2 = -1; // No active tab
         }
 
         this.dropdownOpen = false;

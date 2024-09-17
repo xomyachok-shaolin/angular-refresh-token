@@ -2,7 +2,7 @@
   <div class="col-md-12">
     <div class="card card-container">
       <h2 tuiTextfield size="xl" class="text-header">Вход в личный кабинет</h2>
-      <form (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
+      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
         <div class="form-group input-username">
           <tui-input
             [(ngModel)]="form.username"
@@ -10,21 +10,16 @@
             required
             #username="ngModel"
             [tuiTextfieldCleaner]="true"
-            [ngClass]="{ 'is-invalid': f.submitted && username.errors }"
+            [ngClass]="{ 'is-invalid': f.submitted && username.invalid }"
           >
             E-mail или логин
             <input tuiTextfield type="text" />
           </tui-input>
-          <div
-            *ngIf="username.errors && username.dirty"
-            class="invalid-feedback"
-          >
-            <div *ngIf="username.errors['required']">
-              Обязательно к заполнению!
-            </div>
+          <div *ngIf="username.invalid && (username.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="username.errors?.['required']">Обязательно к заполнению!</div>
           </div>
         </div>
-
+      
         <div class="form-group input-password">
           <tui-input
             [(ngModel)]="form.password"
@@ -33,25 +28,18 @@
             #password="ngModel"
             [tuiTextfieldCleaner]="true"
             [tuiTextfieldCustomContent]="forgotContent"
-            [ngClass]="{ 'is-invalid': f.submitted && password.errors }"
+            [ngClass]="{ 'is-invalid': f.submitted && password.invalid }"
           >
             <ng-template #forgotContent> Забыли? </ng-template>
             Пароль
             <input tuiTextfield type="password" />
           </tui-input>
-          <div
-            *ngIf="password.errors && password.dirty"
-            class="invalid-feedback"
-          >
-            <div *ngIf="password.errors['required']">
-              Обязательно к заполнению!
-            </div>
-            <div *ngIf="password.errors['minlength']">
-              Пароль должен быть не менее 6 символов
-            </div>
+          <div *ngIf="password.invalid && (password.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="password.errors?.['required']">Обязательно к заполнению!</div>
+            <!-- <div *ngIf="password.errors?.['minlength']">Пароль должен быть не менее 6 символов</div> -->
           </div>
         </div>
-
+      
         <tui-checkbox-labeled
           [(ngModel)]="form.isRemember"
           name="isRemember"
@@ -59,11 +47,12 @@
         >
           Запомнить меня
         </tui-checkbox-labeled>
-
+      
         <button size="l" appearance="primary" tuiButton type="submit">
           Вход
         </button>
       </form>
+      
     </div>
     <tui-notification
       *ngIf="showErrorNotification"

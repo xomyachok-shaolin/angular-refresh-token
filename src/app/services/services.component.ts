@@ -346,8 +346,8 @@ export class ServicesComponent implements OnInit {
   }
 
   fetchRestrictionPolygons(bbox: string): void {
-    const url = '/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=56.38739152864383,55.30553234524936,56.41610580200159,55.34530687203605';
-    this.http.get<any>(url).subscribe({
+      const url = `/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=${bbox}`;
+      this.http.get<any>(url).subscribe({
       next: (data) => {
         this.restrictionPolygon = this.convertGeoJsonToPolygon(data);
         if (this.restrictionPolygon) {
@@ -464,7 +464,9 @@ export class ServicesComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/'], { replaceUrl: true }).then(() => {
+      window.location.reload();
+    });
   }
 
   isPointInPolygon(marker: L.LatLng, poly: L.Polygon): boolean {

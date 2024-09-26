@@ -55,9 +55,10 @@ export class LoginComponent implements OnInit {
         this.eventBusService.emit({ name: 'login', value: { user: this.storageService.getUser() } });
   
         // Перенаправление в личный кабинет
-        this.router.navigate(['/personal-cabinet']).then(() => {
+        this.router.navigate(['/personal-cabinet'], { replaceUrl: true }).then(() => {
+          window.location.reload();
           this.cdr.detectChanges(); // Обновление после перехода на другую страницу
-        });
+          });
       },
       error: (err) => {
         this.errorMessage = err.error.message || 'Ошибка при входе';

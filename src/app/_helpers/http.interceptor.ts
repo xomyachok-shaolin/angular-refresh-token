@@ -84,7 +84,9 @@ export class HttpRequestInterceptor implements HttpInterceptor {
 
   private redirectToLogin(): void {
     this.storageService.clean(); 
-    this.router.navigate(['/login']); 
+    this.router.navigate(['/login'], { replaceUrl: true }).then(() => {
+      window.location.reload();
+    });
   }
 }
 

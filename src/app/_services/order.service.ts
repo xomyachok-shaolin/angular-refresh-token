@@ -48,7 +48,7 @@ export class OrderService {
       .set('archive', archive.toString());
 
       if (executionStatuses?.length) {
-        params = params.set('statuses', executionStatuses.join(','));
+        params = params.set('executionStatus', executionStatuses.join(','));
       }
       if (serviceList?.length) {
         params = params.set('serviceList', serviceList.join(','));

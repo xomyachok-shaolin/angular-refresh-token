@@ -26,24 +26,30 @@ const routes: Routes = [
   { path: 'services', component: ServicesComponent },
   { path: 'mod', component: BoardModeratorComponent },
   { path: 'admin', component: BoardAdminComponent },
-  { path: 'personal-cabinet', component: PersonalCabinetComponent, children: [
-    { path: 'main', component: MainComponent },
-    { path: 'additional', component: AdditionalComponent },
-    { path: 'notifications', component: NotificationsComponent },
-    { path: '', redirectTo: 'main', pathMatch: 'full' }
-  ]
-},
-{ path: 'orders', component: OrdersComponent, children: [
-    { path: 'active', component: ActiveComponent },
-    { path: 'archived', component: ArchivedComponent },
-    { path: '', redirectTo: 'active', pathMatch: 'full' }
-  ]
-},
-  { path: '', redirectTo: 'home', pathMatch: 'full' }
+  {
+    path: 'personal-cabinet',
+    component: PersonalCabinetComponent,
+    children: [
+      { path: 'main', component: MainComponent },
+      { path: 'additional', component: AdditionalComponent },
+      { path: 'notifications', component: NotificationsComponent },
+      { path: '', redirectTo: 'main', pathMatch: 'full' },
+    ],
+  },
+  {
+    path: 'orders',
+    component: OrdersComponent,
+    children: [
+      { path: 'active', component: ActiveComponent },
+      { path: 'archived', component: ArchivedComponent },
+      { path: '', redirectTo: 'active', pathMatch: 'full' },
+    ],
+  },
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

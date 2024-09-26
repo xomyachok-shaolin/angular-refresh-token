@@ -17,8 +17,8 @@ import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
   TuiBooleanHandler,
+  TuiContextWithImplicit,
   TuiDay,
-  tuiPure,
 } from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
 
@@ -27,6 +27,8 @@ import { StorageService } from '../../_services/storage.service';
   templateUrl: './active.component.html',
   styleUrls: ['./active.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+  ],
 })
 export class ActiveComponent implements OnInit {
   @ViewChild(TuiDriver)
@@ -80,36 +82,51 @@ export class ActiveComponent implements OnInit {
     });
   }
 
-  protected availableServices: readonly string[] = [
-    'Определение_Координат_ЛЭП',
-    'Определение_Координат_Характерых_Точек_ЗУ',
-    'Создание_Матрицы_Рельефа',
+  public availableServices: Array<{ label: string; value: string }> = [
+    {
+      label: 'Определение координат ЛЭП',
+      value: 'Определение_Координат_ЛЭП',
+    },
+    {
+      label: 'Определение координат характерых точек ЗУ',
+      value: 'Определение_Координат_Характерых_Точек_ЗУ',
+    },
+    {
+      label: 'Создание матрицы рельефа',
+      value: 'Создание_Матрицы_Рельефа',
+    },
   ];
-
-  protected availableStatuses: readonly string[] = [
-    'Выполнено',
-    'В обработке',
-    'Отказано',
-    'Не оплачено',
+  
+  public availableStatuses: Array<{ label: string; value: string }> = [
+    { label: 'Выполнено', value: 'Ready' },
+    { label: 'В обработке', value: 'inProcessing' },
+    { label: 'Отказано', value: 'NotReady' },
+    { label: 'Не оплачено', value: 'inBasket' },
   ];
+  
 
-  protected search: string | null = '';
+  public serviceSearch: string = '';
+  public statusSearch: string = '';
 
-  @tuiPure
-  protected filterServices(search: string | null): readonly string[] {
+  public tagValidator: TuiBooleanHandler<{ label: string; value: string }> = (tag) => {
+    return !!tag && tag.label.length > 0;
+  };
+  
+  protected filterServices(
+    search: string | null
+  ): Array<{ label: string; value: string }> {
     return this.availableServices.filter((service) =>
-      TUI_DEFAULT_MATCHER(service, search || '')
+      TUI_DEFAULT_MATCHER(service.label, search || '')
     );
   }
-
-  @tuiPure
-  protected filterStatuses(search: string | null): readonly string[] {
+  
+  protected filterStatuses(
+    search: string | null
+  ): Array<{ label: string; value: string }> {
     return this.availableStatuses.filter((status) =>
-      TUI_DEFAULT_MATCHER(status, search || '')
+      TUI_DEFAULT_MATCHER(status.label, search || '')
     );
   }
-
-  protected tagValidator: TuiBooleanHandler<string> = (tag) => tag.length > 0;
 
   ngOnInit() {
     // Trigger the initial fetch of orders
@@ -134,6 +151,7 @@ export class ActiveComponent implements OnInit {
     });
   }
 
+ 
   fetchOrders(index: number) {
     this.currentPage = index;
     const page = this.currentPage;
@@ -148,7 +166,14 @@ export class ActiveComponent implements OnInit {
   
     if (uuid) {
       const selectedServices = this.form.value.selectedServices;
+      const selectedServiceValues = selectedServices
+        ? selectedServices.map((s: any) => s.value)
+        : [];
+  
       const selectedStatuses = this.form.value.selectedStatuses;
+      const selectedStatusValues = selectedStatuses
+        ? selectedStatuses.map((s: any) => s.value)
+        : [];
   
       const dateRange = this.form.value.dateRange;
       const startDate =
@@ -168,19 +193,19 @@ export class ActiveComponent implements OnInit {
           sortField,
           sortDirection,
           archive,
-          selectedStatuses,
-          selectedServices,
+          selectedStatusValues,
+          selectedServiceValues,
           startDate,
           endDate
         )
         .subscribe({
           next: (data: any) => {
-            if (!data) {
-              console.log('204 No Content - No orders found.');
+            if (!data || !data.content || data.content.length === 0) {
+              console.log('No orders found.');
               this.hasOrders = false;
               this.orders = [];
               this.totalPages = 0;
-            } else if (data.content && data.content.length > 0) {
+            } else {
               this.hasOrders = true;
               this.orders = data.content.map((order: any) => ({
                 uuid: order.uuid,
@@ -200,11 +225,6 @@ export class ActiveComponent implements OnInit {
                 selected: false,
               }));
               this.totalPages = data.totalPages;
-            } else {
-              console.warn('No orders returned in response.');
-              this.hasOrders = false;
-              this.orders = [];
-              this.totalPages = 0;
             }
             this.cdRef.markForCheck(); // Trigger UI refresh
           },
@@ -213,14 +233,15 @@ export class ActiveComponent implements OnInit {
             this.hasOrders = false;
             this.orders = [];
             this.totalPages = 0;
+            this.cdRef.markForCheck(); // Trigger UI refresh
           },
         });
     } else {
-      console.error('UUID пользователя не найден.');
+      console.error('UUID пользоваnеля не найден.');
       this.hasOrders = false;
     }
   }
-
+  
   private mapStatus(status: string): string {
     switch (status) {
       case 'Ready':
@@ -235,6 +256,7 @@ export class ActiveComponent implements OnInit {
         return status;
     }
   }
+  
 
   getServiceTitles(services: Service[]): string {
     if (!services || services.length === 0) {

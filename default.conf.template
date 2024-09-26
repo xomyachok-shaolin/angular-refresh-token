@@ -9,7 +9,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://highFly:8080;
+        proxy_pass ${BACKEND_URL};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -17,12 +17,12 @@ server {
     }
 
     location /geoserver/ {
-        proxy_pass http://geoserver.usgik.ru:9090;
+        proxy_pass ${GEOSERVER_URL};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-    }
+   }
 
     location /tiles/ {
         resolver 8.8.8.8 ipv6=off; 

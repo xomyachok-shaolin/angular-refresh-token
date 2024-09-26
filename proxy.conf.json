@@ -8,7 +8,7 @@
     }
   },
   "/geoserver": {
-    "target": "http://geoserver.usgik.ru:9090",
+    "target": "http://geoserver.usgik.ru:9090/geoserver/",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {

@@ -1,19 +1,18 @@
 <div class="filters">
   <form [formGroup]="form" class="filter-row">
     <tui-multi-select
-      placeholder="Услуги"
-      formControlName="selectedServices"
-      class="b-form"
-      [tuiTextfieldLabelOutside]="true"
-    >
-      Услуги
-      <tui-data-list-wrapper
-        *tuiDataList
-        tuiMultiSelectGroup
-        [items]="filterServices(search)"
-      ></tui-data-list-wrapper>
-    </tui-multi-select>
-
+    placeholder="Услуги"
+    formControlName="selectedServices"
+    class="b-form"
+    [tuiTextfieldLabelOutside]="true"
+  >
+    Услуги
+    <tui-data-list-wrapper
+      *tuiDataList
+      [items]="filterServices(serviceSearch)"
+    ></tui-data-list-wrapper>
+  </tui-multi-select>
+  
     <tui-input-date-range
       formControlName="dateRange"
       placeholder="Период"
@@ -23,21 +22,20 @@
     </tui-input-date-range>
 
     <tui-multi-select
-      placeholder="Статус"
-      formControlName="selectedStatuses"
-      [tuiTextfieldLabelOutside]="true"
-      [tagValidator]="tagValidator"
-      [(search)]="search"
-      class="b-form"
-    >
-      Статус
-      <tui-data-list-wrapper
-        *tuiDataList
-        tuiMultiSelectGroup
-        [items]="filterStatuses(search)"
-      ></tui-data-list-wrapper>
-    </tui-multi-select>
-
+  placeholder="Статус"
+  formControlName="selectedStatuses"
+  [tuiTextfieldLabelOutside]="true"
+  [tagValidator]="tagValidator"
+  [(search)]="statusSearch"
+  class="b-form"
+>
+  Статус
+  <tui-data-list-wrapper
+    *tuiDataList
+    [items]="filterStatuses(statusSearch)"
+  ></tui-data-list-wrapper>
+</tui-multi-select>
+  
     <div class="search-container">
       <tui-input
         tuiTextfieldIconLeft="tuiIconSearch"

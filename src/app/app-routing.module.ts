@@ -45,7 +45,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'active', pathMatch: 'full' },
     ],
   },
-  { path: '', redirectTo: 'home', pathMatch: 'full' },
+  { path: '', redirectTo: 'personal-cabinet/main', pathMatch: 'full' },
 ];
 
 @NgModule({

@@ -12,6 +12,9 @@
   <div class="content">
     <div class="main-container">
       <div class="left-panel">
+
+  <tui-loader [showLoader]="isLoading" size="m" [overlay]="true">
+  </tui-loader>
         <!-- Leaflet map placeholder -->
         <div id="map" style="height: 100%; border-radius: 16px"></div>
       </div>

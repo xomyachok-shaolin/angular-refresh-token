@@ -21,6 +21,7 @@ import {
   TuiDay,
 } from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
+import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
 
 @Component({
   selector: 'app-active',
@@ -28,6 +29,14 @@ import { StorageService } from '../../_services/storage.service';
   styleUrls: ['./active.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
+    tuiItemsHandlersProvider<{ label: string; value: string }>({
+      // Define how to compare two items
+      identityMatcher: (item1, item2) => item1.value === item2.value,
+      // Define how to stringify items for display and search
+      stringify: (item: { label: string; value: string } | TuiContextWithImplicit<{ label: string; value: string }>) => {
+        return 'label' in item ? item.label : item.$implicit.label;
+      },
+    }),
   ],
 })
 export class ActiveComponent implements OnInit {

@@ -61,7 +61,6 @@ import {
   TuiInputRangeModule,
   TuiToggleModule,
   TuiHighlightModule,
-  tuiItemsHandlersProvider,
 } from '@taiga-ui/kit';
 import {
   TuiDropdownMobileModule,
@@ -77,7 +76,7 @@ import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
 import { OrderService } from './_services/order.service';
 import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
-import { TuiContextWithImplicit, TuiDropdownHostModule } from '@taiga-ui/cdk';
+import { TuiDropdownHostModule } from '@taiga-ui/cdk';
 import { ServicesComponent } from './services/services.component';
 import { CommonModule } from '@angular/common';
 
@@ -156,14 +155,6 @@ import { CommonModule } from '@angular/common';
     provideAnimations(),
     tuiSvgOptionsProvider({
       path: 'assets/taiga-ui/icons',
-    }),
-    tuiItemsHandlersProvider<{ label: string; value: string }>({
-      // Define how to compare two items
-      identityMatcher: (item1, item2) => item1.value === item2.value,
-      // Define how to stringify items for display and search
-      stringify: (item: { label: string; value: string } | TuiContextWithImplicit<{ label: string; value: string }>) => {
-        return 'label' in item ? item.label : item.$implicit.label;
-      },
     }),
     {
       provide: TUI_SANITIZER,

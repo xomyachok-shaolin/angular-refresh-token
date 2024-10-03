@@ -15,7 +15,7 @@ import { TuiAlertService } from '@taiga-ui/core';
 @Injectable()
 export class HttpRequestInterceptor implements HttpInterceptor {
   private isRefreshing = false;
-  private readonly TIMEOUT = 5000; 
+  private readonly TIMEOUT = 0; 
 
   constructor(
     private storageService: StorageService,

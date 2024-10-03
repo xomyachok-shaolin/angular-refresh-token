@@ -32,12 +32,12 @@ export class AppComponent {
   dropdownOpen = false;
 
   constructor(
-    private storageService: StorageService,
-    private authService: AuthService,
-    private eventBusService: EventBusService,
-    private router: Router,
-    private alertService: TuiAlertService,
-    private cdr: ChangeDetectorRef
+    private readonly storageService: StorageService,
+    private readonly authService: AuthService,
+    private readonly eventBusService: EventBusService,
+    private readonly router: Router,
+    private readonly alertService: TuiAlertService,
+    private readonly cdr: ChangeDetectorRef
   ) {
     this.router.events
       .pipe(filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd))

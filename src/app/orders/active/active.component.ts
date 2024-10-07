@@ -33,7 +33,11 @@ import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
       // Define how to compare two items
       identityMatcher: (item1, item2) => item1.value === item2.value,
       // Define how to stringify items for display and search
-      stringify: (item: { label: string; value: string } | TuiContextWithImplicit<{ label: string; value: string }>) => {
+      stringify: (
+        item:
+          | { label: string; value: string }
+          | TuiContextWithImplicit<{ label: string; value: string }>
+      ) => {
         return 'label' in item ? item.label : item.$implicit.label;
       },
     }),
@@ -81,7 +85,7 @@ export class ActiveComponent implements OnInit {
     private orderService: OrderService,
     private fb: FormBuilder,
     private storageService: StorageService,
-  private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -105,22 +109,23 @@ export class ActiveComponent implements OnInit {
       value: 'Создание_Матрицы_Рельефа',
     },
   ];
-  
+
   public availableStatuses: Array<{ label: string; value: string }> = [
     { label: 'Выполнено', value: 'Ready' },
     { label: 'В обработке', value: 'inProcessing' },
     { label: 'Отказано', value: 'NotReady' },
     { label: 'Не оплачено', value: 'inBasket' },
   ];
-  
 
   public serviceSearch: string = '';
   public statusSearch: string = '';
 
-  public tagValidator: TuiBooleanHandler<{ label: string; value: string }> = (tag) => {
+  public tagValidator: TuiBooleanHandler<{ label: string; value: string }> = (
+    tag
+  ) => {
     return !!tag && tag.label.length > 0;
   };
-  
+
   protected filterServices(
     search: string | null
   ): Array<{ label: string; value: string }> {
@@ -128,7 +133,7 @@ export class ActiveComponent implements OnInit {
       TUI_DEFAULT_MATCHER(service.label, search || '')
     );
   }
-  
+
   protected filterStatuses(
     search: string | null
   ): Array<{ label: string; value: string }> {
@@ -160,7 +165,6 @@ export class ActiveComponent implements OnInit {
     });
   }
 
- 
   fetchOrders(index: number) {
     this.currentPage = index;
     const page = this.currentPage;
@@ -168,32 +172,33 @@ export class ActiveComponent implements OnInit {
     const sortField = 'COST';
     const sortDirection = 'DESC';
     const archive = false;
-  
+
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
     const uuid = user ? user.uuid : null;
-  
+
     if (uuid) {
       const selectedServices = this.form.value.selectedServices;
       const selectedServiceValues = selectedServices
         ? selectedServices.map((s: any) => s.value)
         : [];
-  
+
       const selectedStatuses = this.form.value.selectedStatuses;
       const selectedStatusValues = selectedStatuses
         ? selectedStatuses.map((s: any) => s.value)
         : [];
-  
+
       const dateRange = this.form.value.dateRange;
+      console.log(dateRange);
       const startDate =
-        dateRange?.begin instanceof TuiDay
-          ? dateRange.begin.toLocalNativeDate()
+        dateRange?.from instanceof TuiDay
+          ? dateRange.from.toLocalNativeDate()
           : null;
       const endDate =
-        dateRange?.end instanceof TuiDay
-          ? dateRange.end.toLocalNativeDate()
+        dateRange?.to instanceof TuiDay
+          ? dateRange.to.toLocalNativeDate()
           : null;
-  
+
       this.orderService
         .getPaginatedUserOrders(
           uuid,
@@ -250,7 +255,7 @@ export class ActiveComponent implements OnInit {
       this.hasOrders = false;
     }
   }
-  
+
   private mapStatus(status: string): string {
     switch (status) {
       case 'Ready':
@@ -265,7 +270,6 @@ export class ActiveComponent implements OnInit {
         return status;
     }
   }
-  
 
   getServiceTitles(services: Service[]): string {
     if (!services || services.length === 0) {

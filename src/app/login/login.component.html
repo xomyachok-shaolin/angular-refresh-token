@@ -3,20 +3,20 @@
     <div class="card card-container">
       <h2 tuiTextfield size="xl" class="text-header">Вход в личный кабинет</h2>
       <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
-        <div class="form-group input-username">
+        <div class="form-group input-email">
           <tui-input
-            [(ngModel)]="form.username"
-            name="username"
+            [(ngModel)]="form.email"
+            name="email"
             required
-            #username="ngModel"
+            #email="ngModel"
             [tuiTextfieldCleaner]="true"
-            [ngClass]="{ 'is-invalid': f.submitted && username.invalid }"
+            [ngClass]="{ 'is-invalid': f.submitted && email.invalid }"
           >
-            E-mail или логин
+            E-mail
             <input tuiTextfield type="text" />
           </tui-input>
-          <div *ngIf="username.invalid && (username.dirty || f.submitted)" class="invalid-feedback">
-            <div *ngIf="username.errors?.['required']">Обязательно к заполнению!</div>
+          <div *ngIf="email.invalid && (email.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="email.errors?.['required']">Обязательно к заполнению!</div>
           </div>
         </div>
       

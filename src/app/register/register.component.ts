@@ -9,7 +9,6 @@ import { NgForm } from '@angular/forms';
 })
 export class RegisterComponent {
   form: any = {
-    username: null,
     email: null,
     password: null
   };
@@ -25,9 +24,9 @@ export class RegisterComponent {
       return;  // Прерываем выполнение, если форма невалидна
     }
   
-    const { username, email, password } = this.form;
+    const { email, password } = this.form;
   
-    this.authService.register(username, email, password).subscribe({
+    this.authService.register(email, password).subscribe({
       next: data => {
         console.log(data);
         this.isSuccessful = true;

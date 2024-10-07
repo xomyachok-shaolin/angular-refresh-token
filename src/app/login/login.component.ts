@@ -4,6 +4,7 @@ import { StorageService } from '../_services/storage.service';
 import { Router } from '@angular/router'; // Добавляем Router
 import { EventBusService } from '../_shared/event-bus.service';
 import { NgForm } from '@angular/forms';
+import { TuiAlertService } from '@taiga-ui/core';
 
 @Component({
   selector: 'app-login',
@@ -12,7 +13,7 @@ import { NgForm } from '@angular/forms';
 })
 export class LoginComponent implements OnInit {
   form: any = {
-    username: null,
+    email: null,
     password: null,
     isRemember: true,
   };
@@ -27,7 +28,8 @@ export class LoginComponent implements OnInit {
     private storageService: StorageService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private eventBusService: EventBusService
+    private eventBusService: EventBusService,
+    private alertService: TuiAlertService
   ) {}
 
   ngOnInit(): void {
@@ -42,9 +44,9 @@ export class LoginComponent implements OnInit {
       return;  // Прерываем выполнение, если форма невалидна
     }
   
-    const { username, password } = this.form;
+    const { email, password } = this.form;
   
-    this.authService.login(username, password).subscribe({
+    this.authService.login(email, password).subscribe({
       next: (data) => {
         this.storageService.saveUser(data);
         this.isLoginFailed = false;
@@ -61,9 +63,10 @@ export class LoginComponent implements OnInit {
           });
       },
       error: (err) => {
-        this.errorMessage = err.error.message || 'Ошибка при входе';
-        this.isLoginFailed = true;
-        this.showErrorNotification = true;
+        this.errorMessage = err.error || 'Ошибка при входе';
+        this.alertService.open(this.errorMessage, { status: 'error' }).subscribe();
+        // this.isLoginFailed = true;
+        // this.showErrorNotification = true;
       },
     });
   }

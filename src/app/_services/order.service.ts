@@ -34,10 +34,10 @@ export class OrderService {
     sortField: string,
     sortDirection: string,
     archive: boolean,
-    executionStatuses?: string[],  
-    serviceList?: string[],        
-    startDate?: Date,              
-    endDate?: Date    
+    executionStatuses?: string[],
+    serviceList?: string[],
+    startDate?: Date,
+    endDate?: Date
   ): Observable<OrderResponse> {
     let params = new HttpParams()
       .set('uuid', uuid)
@@ -47,18 +47,18 @@ export class OrderService {
       .set('sortDirection', sortDirection)
       .set('archive', archive.toString());
 
-      if (executionStatuses?.length) {
-        params = params.set('executionStatus', executionStatuses.join(','));
-      }
-      if (serviceList?.length) {
-        params = params.set('serviceList', serviceList.join(','));
-      }
-      if (startDate) {
-        params = params.set('startDate', startDate.toISOString().split('T')[0]);
-      }
-      if (endDate) {
-        params = params.set('endDate', endDate.toISOString().split('T')[0]);
-      }
+    if (executionStatuses?.length) {
+      params = params.set('executionStatus', executionStatuses.join(','));
+    }
+    if (serviceList?.length) {
+      params = params.set('serviceList', serviceList.join(','));
+    }
+    if (startDate) {
+      params = params.set('startDate', startDate.toISOString().split('T')[0]);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate.toISOString().split('T')[0]);
+    }
 
     return this.http.get<OrderResponse>('/api/order/pagination/client', {
       params,
@@ -73,10 +73,13 @@ export class OrderService {
     sizePerPage: number,
     sortField: string,
     sortDirection: string,
-    archive: boolean
+    archive: boolean,
+    executionStatuses?: string[],
+    serviceList?: string[],
+    startDate?: Date,
+    endDate?: Date
   ): Observable<any> {
-    const url = `/api/order/pagination/client`;
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('uuid', uuid)
       .set('page', page.toString())
       .set('sizePerPage', sizePerPage.toString())
@@ -84,6 +87,22 @@ export class OrderService {
       .set('sortDirection', sortDirection)
       .set('archive', archive.toString());
 
-    return this.http.get<any>(url, { params });
+    if (executionStatuses?.length) {
+      params = params.set('executionStatus', executionStatuses.join(','));
+    }
+    if (serviceList?.length) {
+      params = params.set('serviceList', serviceList.join(','));
+    }
+    if (startDate) {
+      params = params.set('startDate', startDate.toISOString().split('T')[0]);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate.toISOString().split('T')[0]);
+    }
+
+    return this.http.get<OrderResponse>('/api/order/pagination/client', {
+      params,
+      headers: this.getAuthHeaders(),
+    });
   }
 }

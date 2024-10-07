@@ -2,20 +2,7 @@
   <div class="col-md-12">
     <div class="card card-container">
       <h2 tuiTextfield size="xl" class="text-header">Регистрация</h2>
-      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
-        <div class="form-group input-username">
-          <tui-input [(ngModel)]="form.username" name="username" required #username="ngModel"
-            [tuiTextfieldCleaner]="true"
-            [ngClass]="{'is-invalid': f.submitted && username.invalid}">
-            Имя пользователя
-            <input tuiTextfield type="text" />
-          </tui-input>
-          <div *ngIf="username.invalid && (username.dirty || f.submitted)" class="invalid-feedback">
-            <div *ngIf="username.errors?.['required']">Обязательно к заполнению!</div>
-            <div *ngIf="username.errors?.['minlength']">Имя пользователя должно быть не менее 3 символов</div>
-          </div>
-        </div>
-      
+      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>      
         <div class="form-group input-email">
           <tui-input [(ngModel)]="form.email" name="email" required email #email="ngModel"
             [tuiTextfieldCleaner]="true"

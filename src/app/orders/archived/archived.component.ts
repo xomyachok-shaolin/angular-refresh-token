@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnInit,
@@ -8,16 +9,38 @@ import {
 } from '@angular/core';
 import { OrderService } from '../../_services/order.service';
 import { Order, Service } from '../order.model';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
 import { Observable } from 'rxjs';
-import { EMPTY_QUERY, TuiDay } from '@taiga-ui/cdk';
+import {
+  EMPTY_QUERY,
+  TUI_DEFAULT_MATCHER,
+  TuiBooleanHandler,
+  TuiContextWithImplicit,
+  TuiDay,
+} from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
+import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
 
 @Component({
   selector: 'app-archived',
   templateUrl: './archived.component.html',
   styleUrls: ['./archived.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    tuiItemsHandlersProvider<{ label: string; value: string }>({
+      // Define how to compare two items
+      identityMatcher: (item1, item2) => item1.value === item2.value,
+      // Define how to stringify items for display and search
+      stringify: (
+        item:
+          | { label: string; value: string }
+          | TuiContextWithImplicit<{ label: string; value: string }>
+      ) => {
+        return 'label' in item ? item.label : item.$implicit.label;
+      },
+    }),
+  ],
 })
 export class ArchivedComponent implements OnInit {
   @ViewChild(TuiDriver)
@@ -80,13 +103,66 @@ export class ArchivedComponent implements OnInit {
     private storageService: StorageService
   ) {
     this.form = this.fb.group({
-      selectedStatus: [''],
-      dateRange: [{ begin: new Date(), end: new Date() }],
-    });
+      selectedServices: [[]],
+      selectedStatuses: [[]],
+      dateRange: new FormControl(null),
+      searchAll: new FormControl(''),
+   });
+  }
+
+  public availableServices: Array<{ label: string; value: string }> = [
+    {
+      label: 'Определение координат ЛЭП',
+      value: 'Определение_Координат_ЛЭП',
+    },
+    {
+      label: 'Определение координат характерых точек ЗУ',
+      value: 'Определение_Координат_Характерых_Точек_ЗУ',
+    },
+    {
+      label: 'Создание матрицы рельефа',
+      value: 'Создание_Матрицы_Рельефа',
+    },
+  ];
+
+  public availableStatuses: Array<{ label: string; value: string }> = [
+    { label: 'Выполнено', value: 'Ready' },
+    { label: 'В обработке', value: 'inProcessing' },
+    { label: 'Отказано', value: 'NotReady' },
+    { label: 'Не оплачено', value: 'inBasket' },
+  ];
+
+  public serviceSearch: string = '';
+  public statusSearch: string = '';
+
+  public tagValidator: TuiBooleanHandler<{ label: string; value: string }> = (
+    tag
+  ) => {
+    return !!tag && tag.label.length > 0;
+  };
+
+  protected filterServices(
+    search: string | null
+  ): Array<{ label: string; value: string }> {
+    return this.availableServices.filter((service) =>
+      TUI_DEFAULT_MATCHER(service.label, search || '')
+    );
+  }
+
+  protected filterStatuses(
+    search: string | null
+  ): Array<{ label: string; value: string }> {
+    return this.availableStatuses.filter((status) =>
+      TUI_DEFAULT_MATCHER(status.label, search || '')
+    );
   }
 
   ngOnInit() {
     this.fetchOrders(this.currentPage);
+
+    this.form.valueChanges.subscribe(() => {
+      this.fetchOrders(this.currentPage);
+    });
   }
 
   get checked(): boolean | null {
@@ -109,13 +185,32 @@ export class ArchivedComponent implements OnInit {
     const sortField = 'COST';
     const sortDirection = 'DESC';
     const archive = true;
-
+  
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
-    console.log(user); // For debugging
     const uuid = user ? user.uuid : null;
-
+  
     if (uuid) {
+      const selectedServices = this.form.value.selectedServices;
+      const selectedServiceValues = selectedServices
+        ? selectedServices.map((s: any) => s.value)
+        : [];
+  
+      const selectedStatuses = this.form.value.selectedStatuses;
+      const selectedStatusValues = selectedStatuses
+        ? selectedStatuses.map((s: any) => s.value)
+        : [];
+  
+      const dateRange = this.form.value.dateRange;
+      const startDate =
+        dateRange?.from instanceof TuiDay
+          ? dateRange.from.toLocalNativeDate()
+          : null;
+      const endDate =
+        dateRange?.to instanceof TuiDay
+          ? dateRange.to.toLocalNativeDate()
+          : null;
+  
       this.orderService
         .getPaginatedArchivedUserOrders(
           uuid,
@@ -123,7 +218,11 @@ export class ArchivedComponent implements OnInit {
           sizePerPage,
           sortField,
           sortDirection,
-          archive
+          archive,
+          selectedStatusValues,
+          selectedServiceValues,
+          startDate,
+          endDate
         )
         .subscribe({
           next: (data: any) => {
@@ -167,7 +266,7 @@ export class ArchivedComponent implements OnInit {
       console.error('UUID пользователя не найден.');
       this.hasOrders = false;
     }
-  }
+  }  
 
   private updateAllOrders(newOrders: Order[]): void {
     newOrders.forEach((order) => {

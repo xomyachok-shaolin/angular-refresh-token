@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnInit,
@@ -65,24 +66,7 @@ export class ArchivedComponent implements OnInit {
     this.open = !this.open;
   }
 
-  readonly min = new TuiDay(2000, 2, 20);
-  readonly max = new TuiDay(2040, 2, 20);
-
   form: FormGroup;
-  statusOptions = [
-    'Выполнено',
-    'В обработке',
-    'Отказано',
-    'Ожидание подтверждения',
-  ];
-  serviceOptions = [
-    'Все',
-    'Создание единых 3D-стереомоделей',
-    'Аэрофотосъемка',
-    'Фотограмметрические работы',
-    'Услуги по стереомоделям',
-  ];
-
   readonly columns = [
     'Номер',
     'Тип',
@@ -100,7 +84,8 @@ export class ArchivedComponent implements OnInit {
   constructor(
     private orderService: OrderService,
     private fb: FormBuilder,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private cdRef: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -222,7 +207,8 @@ export class ArchivedComponent implements OnInit {
           selectedStatusValues,
           selectedServiceValues,
           startDate,
-          endDate
+          endDate,
+          this.form.value.searchAll
         )
         .subscribe({
           next: (data: any) => {
@@ -249,17 +235,18 @@ export class ArchivedComponent implements OnInit {
               this.orders = newOrders;
               this.totalPages = data.totalPages;
             } else {
-              console.error('Ответ сервера не содержит данных заказов.');
               this.hasOrders = false;
-              this.orders = []; // Ensure orders list is empty
+              this.orders = [];
               this.totalPages = 0;
             }
+            this.cdRef.markForCheck();
           },
           error: (error: any) => {
             console.error('Произошла ошибка при загрузке заказов!', error);
             this.hasOrders = false;
             this.orders = []; // Ensure orders list is empty
             this.totalPages = 0;
+            this.cdRef.markForCheck(); 
           },
         });
     } else {

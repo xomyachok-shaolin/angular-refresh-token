@@ -12,12 +12,20 @@
   <div class="content">
     <div class="main-container">
       <div class="left-panel">
-
-  <tui-loader [showLoader]="isLoading" size="m" [overlay]="true">
-  </tui-loader>
-        <!-- Leaflet map placeholder -->
-        <div id="map" style="height: 100%; border-radius: 16px"></div>
+        <div class="map-container" style="position: relative;">
+          <!-- Leaflet map placeholder -->
+          <div id="map" style="height: 100%; border-radius: 16px"></div>
+      
+          <!-- Loader positioned over the map -->
+          <tui-loader
+            [showLoader]="isLoading"
+            size="xxl"
+            [overlay]="true"
+            class="map-loader"
+          ></tui-loader>
+        </div>
       </div>
+      
       <div class="right-panel">
         <tui-accordion >
           <!-- Service selection accordion item -->
@@ -32,6 +40,7 @@
                 (input)="filterServices($event)"
                 [valueContent]="getServiceTitle(selectedService)"
                 [stringify]="getServiceTitle"
+                [disabled]="isLoading"
               >
                 Услуга
                 <tui-data-list-wrapper
@@ -48,12 +57,13 @@
             <div tuiAccordionItemTitle>Выбор параметров</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <button
-                class="btn-draw"
-                size="m"
-                tuiButton
-                *ngIf="!isDrawingEnabled"
-                (click)="startDrawing()"
-              >
+              class="btn-draw"
+              size="m"
+              tuiButton
+              *ngIf="!isDrawingEnabled"
+              [disabled]="!selectedService"
+              (click)="startDrawing()"
+            >
                 Нажмите для выбора территории
               </button>
               <button
@@ -66,7 +76,7 @@
                 Для подтверждения нажмите Enter
               </button>
               <div>
-                <p>Площадь выбранной территории: {{ area | number }} м²</p>
+                <p>Площадь выбранной территории: {{ formattedArea }} га</p>
               </div>
 
               <div>

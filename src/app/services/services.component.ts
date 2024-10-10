@@ -16,6 +16,11 @@ declare module 'leaflet' {
     smoothWheelZoom?: boolean;
     smoothSensitivity?: number;
   }
+  interface Polygon {
+    restrictionPolygon?: L.Polygon;
+    originalLatLngs?: number[][][];
+    editing: any;
+  }
 }
 
 interface Service {
@@ -65,20 +70,25 @@ export class ServicesComponent implements OnInit {
   steps = (this.max - this.min) / this.sliderStep;
   control = new FormControl([this.min, this.max]);
 
-  isLoading: boolean = false;
+  isLoading: boolean = true;
   selectedRestrictionPolygon: L.Polygon | null = null;
 
   private readonly dialogs = inject(TuiDialogService);
+
+  private cloneLatLngs(latlngs: L.LatLng[][]): number[][][] {
+    return latlngs.map((ring) =>
+      ring.map((latlng) => [latlng.lat, latlng.lng])
+    );
+  }
+
+  formattedArea: string = '';
 
   constructor(private router: Router, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.initMap();
+    this.fetchRestrictionPolygons();
     this.fetchServices();
-
-    const bbox =
-      '53.09692382812501,51.48822432632349,60.71044921875001,56.728621973140754';
-    this.fetchRestrictionPolygons(bbox);
   }
 
   initMap(): void {
@@ -105,7 +115,7 @@ export class ServicesComponent implements OnInit {
         draw: {
           polygon: {
             shapeOptions: {
-              color: '#cc5630',
+              color: 'magenta',
               fillOpacity: 0.0,
             },
             allowIntersection: false,
@@ -123,10 +133,11 @@ export class ServicesComponent implements OnInit {
         },
       });
 
-      this.map.addControl(this.drawControl);
+      // this.map.addControl(this.drawControl);
 
       this.map.on(L.Draw.Event.CREATED, (event: any) => {
         const layer = event.layer;
+        layer.restrictionPolygon = this.selectedRestrictionPolygon;
         this.drawnLayers.addLayer(layer);
         this.isConfirmDisabled = false;
         this.updateArea();
@@ -136,16 +147,16 @@ export class ServicesComponent implements OnInit {
         this.map.once('click', (e: L.LeafletMouseEvent) => {
           const latlng = e.latlng;
           let foundPolygon = false;
-      
+
           for (const poly of this.restrictionPolygons) {
             if (this.isPointInPolygon(latlng, [poly])) {
               this.selectedRestrictionPolygon = poly;
-              poly.setStyle({ color: 'pink' });
+              poly.setStyle({ color: 'cyan' });
               foundPolygon = true;
               break;
             }
           }
-      
+
           if (!foundPolygon) {
             this.showErrorTooltip(
               'Рисование можно начать только внутри одного из ограничивающих полигонов.',
@@ -158,35 +169,79 @@ export class ServicesComponent implements OnInit {
           }
         });
       });
-      
+
+      this.map.on('draw:editstart', (event: any) => {
+        const layers = this.drawnLayers.getLayers();
+        layers.forEach((layer) => {
+          if (layer instanceof L.Polygon) {
+            const polygon = layer as L.Polygon;
+            polygon.originalLatLngs = this.cloneLatLngs(
+              polygon.getLatLngs() as L.LatLng[][]
+            );
+          }
+        });
+      });
+
+      this.map.on('draw:editvertex', (event: any) => {
+        const layer = event.layer;
+        if (layer instanceof L.Polygon) {
+          const polygon = layer as L.Polygon;
+          const latLngs = polygon.getLatLngs() as L.LatLng[][];
+          let isValid = true;
+
+          for (const latLng of latLngs[0]) {
+            if (
+              polygon.restrictionPolygon &&
+              !this.isPointInPolygon(latLng, [polygon.restrictionPolygon])
+            ) {
+              isValid = false;
+              break;
+            }
+          }
+
+          if (!isValid) {
+            this.drawControl._toolbars['edit'].disable();
+
+            this.showErrorTooltip(
+              'Полигоны нельзя редактировать за пределами выбранной области.',
+              polygon.getBounds().getCenter()
+            );
+          } else {
+            // Update originalLatLngs to the new valid coordinates
+            polygon.originalLatLngs = this.cloneLatLngs(
+              polygon.getLatLngs() as L.LatLng[][]
+            );
+          }
+        }
+      });
 
       this.map.on(L.Draw.Event.EDITED, (event: any) => {
         const layers = event.layers;
-        if (this.restrictionPolygons.length > 0) {
-          layers.eachLayer((layer: L.Layer) => {
-            if (layer instanceof L.Polygon) {
-              const polygon = layer as L.Polygon;
-              const latLngs = polygon.getLatLngs() as L.LatLng[][];
-              let isValid = true;
+        layers.eachLayer((layer: L.Layer) => {
+          if (layer instanceof L.Polygon) {
+            const polygon = layer as L.Polygon;
+            const latLngs = polygon.getLatLngs() as L.LatLng[][];
+            let isValid = true;
 
-              for (const latLng of latLngs[0]) {
-                if (!this.isPointInPolygon(latLng, this.restrictionPolygons)) {
-                  isValid = false;
-                  break;
-                }
-              }
-
-              if (!isValid) {
-                this.drawControl._toolbars['edit'].disable();
-                this.showErrorTooltip(
-                  'Отредактированный многоугольник должен находиться внутри ограниченной зоны.',
-                  polygon.getBounds().getCenter()
-                );
+            for (const latLng of latLngs[0]) {
+              if (
+                polygon.restrictionPolygon &&
+                !this.isPointInPolygon(latLng, [polygon.restrictionPolygon])
+              ) {
+                isValid = false;
+                break;
               }
             }
-          });
-        }
 
+            if (!isValid) {
+              this.drawControl._toolbars['edit'].disable();
+              this.showErrorTooltip(
+                'Отредактированный многоугольник должен находиться внутри ограниченной зоны.',
+                polygon.getBounds().getCenter()
+              );
+            }
+          }
+        }); 
         this.updateArea();
       });
 
@@ -275,7 +330,7 @@ export class ServicesComponent implements OnInit {
           }
           // Установить новый выбранный полигон
           this.selectedRestrictionPolygon = poly;
-          poly.setStyle({ color: 'pink' });
+          poly.setStyle({ color: 'cyan' });
         }
         foundPolygon = true;
         break;
@@ -290,40 +345,29 @@ export class ServicesComponent implements OnInit {
   };
 
   updateArea(): void {
-    this.area = this.drawnLayers.getLayers().reduce((sum, layer) => {
-      const latLngs = (layer as L.Polygon).getLatLngs() as L.LatLng[][];
-      if (latLngs.length > 0) {
+    const areaValue = this.drawnLayers.getLayers().reduce((sum, layer) => {
+      if (layer instanceof L.Polygon) {
+        const latLngs = layer.getLatLngs() as L.LatLng[][];
         const coords = latLngs[0].map((latLng) => [latLng.lng, latLng.lat]);
 
-        if (coords.length >= 3) {
-          // Если три или более точки, считаем как треугольник или многоугольник
-          if (coords.length === 3) {
-            const [a, b, c] = coords;
-            const polygon = turf.polygon([[a, b, c, a]]); // Закрываем треугольник
-            return sum + turf.area(polygon);
-          } else if (coords.length >= 4) {
-            // Ensure the polygon is closed
-            if (
-              coords[0][0] !== coords[coords.length - 1][0] ||
-              coords[0][1] !== coords[coords.length - 1][1]
-            ) {
-              coords.push(coords[0]);
-            }
-            const polygon = turf.polygon([coords]);
-            return sum + turf.area(polygon);
-          }
-        } else if (coords.length === 2) {
-          // Если две точки, считаем длину линии
-          const [a, b] = coords;
-          return sum + turf.distance(turf.point(a), turf.point(b));
-        } else if (coords.length === 1) {
-          // Если одна точка, площадь считается нулевой
-          return sum;
+        // Ensure the polygon is closed
+        if (
+          coords[0][0] !== coords[coords.length - 1][0] ||
+          coords[0][1] !== coords[coords.length - 1][1]
+        ) {
+          coords.push(coords[0]);
         }
+
+        const polygon = turf.polygon([coords]);
+        return sum + turf.area(polygon);
       }
       return sum;
-    }, 0);
+    }, 0) / 10000; // Convert to hectares
+
+    // Format the area without commas and with two decimal places
+    this.formattedArea = areaValue.toFixed(2).replace(/,/g, '');
   }
+
 
   removeLastVertex() {
     const lastPolygon =
@@ -338,6 +382,11 @@ export class ServicesComponent implements OnInit {
   }
 
   startDrawing(): void {
+    if (!this.selectedService) {
+      this.showWarningDialog();
+      return;
+    }
+
     if (!this.isDrawingEnabled) {
       this.map.addControl(this.drawControl);
       this.isDrawingEnabled = true;
@@ -423,38 +472,115 @@ export class ServicesComponent implements OnInit {
     }
   }
 
-  fetchRestrictionPolygons(bbox: string): void {
+  fetchRestrictionPolygons(): void {
     if (this.restrictionPolygons.length > 0) {
       // Полигоны уже загружены
       return;
     }
-  
+
     this.isLoading = true; // Начало загрузки
-    const url = `/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=${bbox}`;
+    // const url = `/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=gxp:108_РБ_все_года&outputFormat=JSON&bbox=${bbox}`;
+    const url = `/api/get_geo_json/`;
     this.http.get<any>(url).subscribe({
       next: (data) => {
-        console.log(data)
         this.restrictionPolygons = this.convertGeoJsonToPolygons(data);
-        // Не добавляем полигоны на карту здесь, это будет сделано в toggleRestrictionPolygons
       },
-      error: (error) => console.error('Ошибка при загрузке ограничительных полигонов', error),
+      error: (error) =>
+        console.error('Ошибка при загрузке ограничительных полигонов', error),
       complete: () => (this.isLoading = false), // Завершение загрузки
     });
-  }  
+  }
 
-  convertGeoJsonToPolygons(geoJson: any): L.Polygon[] {
-    const features = geoJson.features;
+  convertGeoJsonToPolygons(data: any[]): L.Polygon[] {
     const polygons: L.Polygon[] = [];
 
-    features.forEach((feature: any) => {
-      const coordinates = feature.geometry.coordinates[0].map(
-        (coord: number[]) => [coord[1], coord[0]]
+    // Определите диапазон лет для градиента
+    const years = data.map((item) => item.year);
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(...years);
+
+    data.forEach((item: any) => {
+      const coordinates = item.coordinates[0].map(
+        (coord: number[]) => [coord[1], coord[0]] // Перестановка координат
       );
-      const polygon = L.polygon(coordinates, { color: '#3388ff' });
+      const year = item.year;
+
+      const color = this.getColorForYear(year, minYear, maxYear);
+
+      const polygon = L.polygon(coordinates, {
+        color: color,
+        weight: 1,
+        fillOpacity: 0.2,
+        className: 'no-focus-poly',
+      });
+
+      // Добавляем всплывающую подсказку при наведении
+      polygon.bindTooltip(`Год съёмки: ${year}`, {
+        sticky: true,
+      });
+
+      // Добавляем обработчики событий для изменения стиля при наведении
+      polygon.on('mouseover', function (this: L.Polygon) {
+        this.setStyle({
+          weight: 1,
+          color: '#aaa',
+          dashArray: '',
+          fillOpacity: 0.6,
+        });
+      });
+
+      polygon.on('mouseout', function (this: L.Polygon) {
+        this.setStyle({
+          weight: 1,
+          color: color,
+          dashArray: '',
+          fillOpacity: 0.2,
+        });
+      });
+
       polygons.push(polygon);
     });
 
     return polygons;
+  }
+
+  getColorForYear(year: number, minYear: number, maxYear: number): string {
+    // Цвета градиента (можете выбрать свои цвета)
+    const startColor = [255, 0, 0]; // Красный
+    const endColor = [0, 0, 255]; // Синий
+
+    const fraction = (year - minYear) / (maxYear - minYear);
+
+    const r = Math.round(
+      startColor[0] + fraction * (endColor[0] - startColor[0])
+    );
+    const g = Math.round(
+      startColor[1] + fraction * (endColor[1] - startColor[1])
+    );
+    const b = Math.round(
+      startColor[2] + fraction * (endColor[2] - startColor[2])
+    );
+
+    return `rgb(${r},${g},${b})`;
+  }
+
+  addLegend(minYear: number, maxYear: number): void {
+    const legend = new L.Control({ position: 'bottomright' });
+
+    legend.onAdd = (map) => {
+      const div = L.DomUtil.create('div', 'info legend');
+      const grades = [minYear, maxYear];
+      const labels = [];
+
+      // Создайте легенду с градиентом
+      div.innerHTML +=
+        '<i style="background: linear-gradient(to right, red , blue); width: 100px; height: 10px; display: block;"></i>';
+      div.innerHTML += `<span>${minYear}</span><span style="float: right;">${maxYear}</span>`;
+
+      return div;
+    };
+
+    legend.addTo(this.map);
   }
 
   toggleRestrictionPolygons(show: boolean): void {
@@ -470,20 +596,19 @@ export class ServicesComponent implements OnInit {
   onParameterChange(parameter: Parameter): void {
     this.selectedParameter = parameter;
     this.clearPolygons();
-  
+
     if (parameter.restrictions.mustBeInside) {
       // Если полигоны еще не загружены, загрузить их
       if (this.restrictionPolygons.length === 0) {
-        const bbox = '53.09692382812501,51.48822432632349,60.71044921875001,56.728621973140754';
-        this.fetchRestrictionPolygons(bbox);
+        this.fetchRestrictionPolygons();
       }
-  
+
       this.toggleRestrictionPolygons(true);
     } else {
       this.toggleRestrictionPolygons(false);
       this.drawServicePolygons();
     }
-  }  
+  }
 
   drawServicePolygons(): void {
     if (!this.selectedService) {
@@ -529,12 +654,12 @@ export class ServicesComponent implements OnInit {
     // Очистить пользовательские полигоны
     this.drawnPolygons.forEach((polygon) => this.map.removeLayer(polygon));
     this.drawnPolygons = [];
-  
+
     // Очистить слои рисования
     this.drawnLayers.clearLayers();
-  
+
     this.updateArea();
-  }  
+  }
 
   filterServices(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -568,7 +693,7 @@ export class ServicesComponent implements OnInit {
 
   isPointInPolygon(marker: L.LatLng, polys: L.Polygon[]): boolean {
     const point = turf.point([marker.lng, marker.lat]);
-  
+
     for (const poly of polys) {
       const allPolyPoints = poly.getLatLngs() as L.LatLng[][];
       const polygonCoords: number[][][] = allPolyPoints.map((ring) => {
@@ -576,21 +701,24 @@ export class ServicesComponent implements OnInit {
         if (coords.length > 0) {
           const firstCoord = coords[0];
           const lastCoord = coords[coords.length - 1];
-          if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
+          if (
+            firstCoord[0] !== lastCoord[0] ||
+            firstCoord[1] !== lastCoord[1]
+          ) {
             coords.push(firstCoord);
           }
         }
         return coords;
       });
-  
+
       const polygon = turf.polygon(polygonCoords);
       if (turf.booleanPointInPolygon(point, polygon)) {
         return true;
       }
     }
-  
+
     return false;
-  }  
+  }
 
   showErrorTooltip(message: string, latlng: L.LatLng): void {
     if (this.errorTooltip) {

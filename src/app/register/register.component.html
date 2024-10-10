@@ -2,40 +2,109 @@
   <div class="col-md-12">
     <div class="card card-container">
       <h2 tuiTextfield size="xl" class="text-header">Регистрация</h2>
-      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>      
+      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
         <div class="form-group input-email">
-          <tui-input [(ngModel)]="form.email" name="email" required email #email="ngModel"
+          <tui-input
+            [(ngModel)]="form.email"
+            name="email"
+            required
+            email
+            #email="ngModel"
             [tuiTextfieldCleaner]="true"
-            [ngClass]="{'is-invalid': f.submitted && email.invalid}">
+            [ngClass]="{ 'is-invalid': f.submitted && email.invalid }"
+          >
             Электронная почта
-            <input tuiTextfield type="email" />
+            <input 
+            autocomplete="email"
+            placeholder="mail@mail.ru"
+            tuiTextfield
+            type="email" />
           </tui-input>
-          <div *ngIf="email.invalid && (email.dirty || f.submitted)" class="invalid-feedback">
-            <div *ngIf="email.errors?.['required']">Обязательно к заполнению!</div>
-            <div *ngIf="email.errors?.['email']">Введите действительный адрес электронной почты</div>
+          <div
+            *ngIf="email.invalid && (email.dirty || f.submitted)"
+            class="invalid-feedback"
+          >
+            <div *ngIf="email.errors?.['required']">
+              Обязательно к заполнению!
+            </div>
+            <div *ngIf="email.errors?.['email']">
+              Введите действительный адрес электронной почты
+            </div>
           </div>
         </div>
-      
+
         <div class="form-group input-password">
-          <tui-input [(ngModel)]="form.password" name="password" required minlength="6" #password="ngModel"
+          <tui-input-password
+            [(ngModel)]="form.password"
+            name="password"
+            required
+            minlength="6"
+            #password="ngModel"
             [tuiTextfieldCleaner]="true"
-            [ngClass]="{'is-invalid': f.submitted && password.invalid}">
+            [ngClass]="{ 'is-invalid': f.submitted && password.invalid }"
+          >
             Пароль
             <input tuiTextfield type="password" />
-          </tui-input>
-          <div *ngIf="password.invalid && (password.dirty || f.submitted)" class="invalid-feedback">
-            <div *ngIf="password.errors?.['required']">Обязательно к заполнению!</div>
-            <div *ngIf="password.errors?.['minlength']">Пароль должен быть не менее 6 символов</div>
+          </tui-input-password>
+          <div
+            *ngIf="password.invalid && (password.dirty || f.submitted)"
+            class="invalid-feedback"
+          >
+            <div *ngIf="password.errors?.['required']">
+              Обязательно к заполнению!
+            </div>
+            <div *ngIf="password.errors?.['minlength']">
+              Пароль должен быть не менее 6 символов
+            </div>
           </div>
         </div>
-      
+
+        <div class="form-group input-password-confirm">
+          <tui-input-password
+            [(ngModel)]="form.confirmPassword"
+            name="confirmPassword"
+            required
+            minlength="6"
+            #confirmPassword="ngModel"
+            [tuiTextfieldCleaner]="true"
+            [ngClass]="{
+              'is-invalid':
+                (f.submitted || confirmPassword.dirty) &&
+                (confirmPassword.invalid || !passwordsMatch)
+            }"
+          >
+            Подтвердите пароль
+          </tui-input-password>
+          <div
+            *ngIf="
+              (confirmPassword.invalid || !passwordsMatch) &&
+              (confirmPassword.dirty || f.submitted)
+            "
+            class="invalid-feedback"
+          >
+            <div *ngIf="confirmPassword.errors?.['required']">
+              Обязательно к заполнению!
+            </div>
+            <div *ngIf="confirmPassword.errors?.['minlength']">
+              Пароль должен быть не менее 6 символов
+            </div>
+            <div *ngIf="!passwordsMatch && !confirmPassword.errors">
+              Пароли не совпадают
+            </div>
+          </div>
+        </div>
+
         <button size="l" appearance="primary" tuiButton type="submit">
           Регистрация
         </button>
       </form>
-      
 
-      <tui-notification *ngIf="showErrorNotification" status="error" [hasIcon]="false" (close)="onCloseNotification()">
+      <tui-notification
+        *ngIf="showErrorNotification"
+        status="error"
+        [hasIcon]="false"
+        (close)="onCloseNotification()"
+      >
         {{ errorMessage }}
       </tui-notification>
 

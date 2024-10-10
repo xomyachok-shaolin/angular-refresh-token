@@ -41,36 +41,46 @@ export class LoginComponent implements OnInit {
 
   onSubmit(form: NgForm): void {
     if (form.invalid) {
-      return;  // Прерываем выполнение, если форма невалидна
+      return; // Прерываем выполнение, если форма невалидна
     }
-  
-    const { email, password } = this.form;
-  
+
+    const { email, password, isRemember } = this.form;
+
     this.authService.login(email, password).subscribe({
       next: (data) => {
-        this.storageService.saveUser(data);
+        this.storageService.saveUser(data, isRemember);
         this.isLoginFailed = false;
         this.isLoggedIn = true;
         this.roles = this.storageService.getUser().roles;
-        
+
         // Уведомляем приложение о входе
-        this.eventBusService.emit({ name: 'login', value: { user: this.storageService.getUser() } });
-  
+        this.eventBusService.emit({
+          name: 'login',
+          value: { user: this.storageService.getUser() },
+        });
+
         // Перенаправление в личный кабинет
-        this.router.navigate(['/personal-cabinet'], { replaceUrl: true }).then(() => {
-          window.location.reload();
-          this.cdr.detectChanges(); // Обновление после перехода на другую страницу
+        this.router
+          .navigate(['/personal-cabinet'], { replaceUrl: true })
+          .then(() => {
+            window.location.reload();
+            this.cdr.detectChanges(); // Обновление после перехода на другую страницу
           });
       },
       error: (err) => {
         this.errorMessage = err.error || 'Ошибка при входе';
-        this.alertService.open(this.errorMessage, { status: 'error' }).subscribe();
+        this.alertService
+          .open(this.errorMessage, { status: 'error' })
+          .subscribe();
         // this.isLoginFailed = true;
         // this.showErrorNotification = true;
       },
     });
   }
-  
+
+  navigateToForgotPassword(): void {
+    this.router.navigate(['/forgot-password']);
+  }
 
   onCloseNotification(): void {
     this.showErrorNotification = false;

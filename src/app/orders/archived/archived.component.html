@@ -77,20 +77,28 @@
           <td class="tui-table__td tui-table__td_align_center">
             <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <span>Заказ {{ order.orderNumber }}</span
             ><br />
             <span class="secondary-text"
               >Договор {{ order.contractNumber }}</span
             >
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div>{{ getServiceTitles(order.service ?? []) }}</div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             {{ order.execution | date : "dd.MM.yyyy" }}
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div
               [class]="{
                 completed: order.executionStatus === 'Выполнено',
@@ -102,7 +110,9 @@
               {{ order.executionStatus }}
             </div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div>{{ order.cost | number : "1.2-2" }} ₽</div>
             <div>{{ order.paymentStatus }}</div>
           </td>

@@ -37,7 +37,8 @@ export class OrderService {
     executionStatuses?: string[],
     serviceList?: string[],
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    searchQuery?: string
   ): Observable<OrderResponse> {
     let params = new HttpParams()
       .set('uuid', uuid)
@@ -59,6 +60,9 @@ export class OrderService {
     if (endDate) {
       params = params.set('endDate', endDate.toISOString().split('T')[0]);
     }
+    if (searchQuery) {
+      params = params.set('searchQuery', searchQuery)
+    }
 
     return this.http.get<OrderResponse>('/api/order/pagination/client', {
       params,
@@ -77,7 +81,8 @@ export class OrderService {
     executionStatuses?: string[],
     serviceList?: string[],
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    searchQuery?: string
   ): Observable<any> {
     let params = new HttpParams()
       .set('uuid', uuid)
@@ -98,6 +103,9 @@ export class OrderService {
     }
     if (endDate) {
       params = params.set('endDate', endDate.toISOString().split('T')[0]);
+    }
+    if (searchQuery) {
+      params = params.set('searchQuery', searchQuery)
     }
 
     return this.http.get<OrderResponse>('/api/order/pagination/client', {

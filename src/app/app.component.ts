@@ -96,10 +96,9 @@ export class AppComponent {
       next: (res) => {
         this.storageService.clean();
         this.isLoggedIn = false;
-        this.router.navigate(['/login'], { replaceUrl: true }).then(() => {
-          window.location.reload();
+        this.router.navigate(['/login'])
           this.alertService.open('Вы успешно вышли из системы.', { status: 'success' }).subscribe();
-        });
+        
       },
       error: (err) => {
         console.error(err);

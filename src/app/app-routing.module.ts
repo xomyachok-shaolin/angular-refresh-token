@@ -16,10 +16,14 @@ import { OrdersComponent } from './orders/orders.component';
 import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
 import { ServicesComponent } from './services/services.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './reset-password/reset-password.component';
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'profile', component: ProfileComponent },
   { path: 'user', component: BoardUserComponent },
@@ -45,7 +49,8 @@ const routes: Routes = [
       { path: '', redirectTo: 'active', pathMatch: 'full' },
     ],
   },
-  { path: '', redirectTo: 'personal-cabinet/main', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '**', redirectTo: '/login' },
 ];
 
 @NgModule({

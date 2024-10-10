@@ -109,3 +109,39 @@ tui-toggle {
   padding: 20px;
   margin: -20px;
 }
+
+.info.legend {
+  background: white;
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  border-radius: 5px;
+}
+
+.info.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+}
+
+.info.legend span {
+  font-size: 12px;
+}
+
+.map-container {
+  position: relative;
+  height: 100%;
+}
+
+.map-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  transform: translate(-50%, -50%);
+  z-index: 1000; /* Обеспечивает отображение поверх карты */
+}
+
+::ng-deep path.no-focus-poly.leaflet-interactive:focus {
+  outline: none !important;
+}

@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+import { TUI_LANGUAGE, TUI_RUSSIAN_LANGUAGE } from '@taiga-ui/i18n';
 import { NgModule } from '@angular/core';
 import {
   BrowserAnimationsModule,
@@ -79,6 +81,8 @@ import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
 import { TuiDropdownHostModule } from '@taiga-ui/cdk';
 import { ServicesComponent } from './services/services.component';
 import { CommonModule } from '@angular/common';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './reset-password/reset-password.component';
 
 @NgModule({
   declarations: [
@@ -99,6 +103,8 @@ import { CommonModule } from '@angular/common';
     ActiveComponent,
     ArchivedComponent,
     ServicesComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent,
   ],
   imports: [
     BrowserModule,
@@ -159,6 +165,10 @@ import { CommonModule } from '@angular/common';
     {
       provide: TUI_SANITIZER,
       useClass: NgDompurifySanitizer,
+    },
+    {
+      provide: TUI_LANGUAGE,
+      useValue: of(TUI_RUSSIAN_LANGUAGE),
     },
   ],
   bootstrap: [AppComponent],

@@ -143,10 +143,8 @@ export class ActiveComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Trigger the initial fetch of orders
     this.fetchOrders(this.currentPage);
 
-    // Subscribe to changes in the form filters
     this.form.valueChanges.subscribe(() => {
       this.fetchOrders(this.currentPage);
     });
@@ -189,7 +187,6 @@ export class ActiveComponent implements OnInit {
         : [];
 
       const dateRange = this.form.value.dateRange;
-      console.log(dateRange);
       const startDate =
         dateRange?.from instanceof TuiDay
           ? dateRange.from.toLocalNativeDate()
@@ -210,12 +207,12 @@ export class ActiveComponent implements OnInit {
           selectedStatusValues,
           selectedServiceValues,
           startDate,
-          endDate
+          endDate,
+          this.form.value.searchAll
         )
         .subscribe({
           next: (data: any) => {
             if (!data || !data.content || data.content.length === 0) {
-              console.log('No orders found.');
               this.hasOrders = false;
               this.orders = [];
               this.totalPages = 0;
@@ -240,7 +237,7 @@ export class ActiveComponent implements OnInit {
               }));
               this.totalPages = data.totalPages;
             }
-            this.cdRef.markForCheck(); // Trigger UI refresh
+            this.cdRef.markForCheck();
           },
           error: (error: any) => {
             console.error('Error while fetching orders:', error);

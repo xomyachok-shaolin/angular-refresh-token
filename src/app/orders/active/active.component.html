@@ -1,18 +1,18 @@
 <div class="filters">
   <form [formGroup]="form" class="filter-row">
     <tui-multi-select
-    placeholder="Услуги"
-    formControlName="selectedServices"
-    class="b-form"
-    [tuiTextfieldLabelOutside]="true"
-  >
-    Услуги
-    <tui-data-list-wrapper
-      *tuiDataList
-      [items]="filterServices(serviceSearch)"
-    ></tui-data-list-wrapper>
-  </tui-multi-select>
-  
+      placeholder="Услуги"
+      formControlName="selectedServices"
+      class="b-form"
+      [tuiTextfieldLabelOutside]="true"
+    >
+      Услуги
+      <tui-data-list-wrapper
+        *tuiDataList
+        [items]="filterServices(serviceSearch)"
+      ></tui-data-list-wrapper>
+    </tui-multi-select>
+
     <tui-input-date-range
       formControlName="dateRange"
       placeholder="Период"
@@ -22,20 +22,20 @@
     </tui-input-date-range>
 
     <tui-multi-select
-  placeholder="Статус"
-  formControlName="selectedStatuses"
-  [tuiTextfieldLabelOutside]="true"
-  [tagValidator]="tagValidator"
-  [(search)]="statusSearch"
-  class="b-form"
->
-  Статус
-  <tui-data-list-wrapper
-    *tuiDataList
-    [items]="filterStatuses(statusSearch)"
-  ></tui-data-list-wrapper>
-</tui-multi-select>
-  
+      placeholder="Статус"
+      formControlName="selectedStatuses"
+      [tuiTextfieldLabelOutside]="true"
+      [tagValidator]="tagValidator"
+      [(search)]="statusSearch"
+      class="b-form"
+    >
+      Статус
+      <tui-data-list-wrapper
+        *tuiDataList
+        [items]="filterStatuses(statusSearch)"
+      ></tui-data-list-wrapper>
+    </tui-multi-select>
+
     <div class="search-container">
       <tui-input
         tuiTextfieldIconLeft="tuiIconSearch"
@@ -47,7 +47,6 @@
     </div>
   </form>
 </div>
-
 
 <div class="order-table" *ngIf="hasOrders; else noOrders">
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
@@ -78,20 +77,28 @@
           <td class="tui-table__td tui-table__td_align_center">
             <tui-checkbox [(ngModel)]="order.selected"></tui-checkbox>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <span>Заказ {{ order.orderNumber }}</span
             ><br />
             <span class="secondary-text"
               >Договор {{ order.contractNumber }}</span
             >
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div>{{ getServiceTitles(order.service ?? []) }}</div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             {{ order.execution | date : "dd.MM.yyyy" }}
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div
               [class]="{
                 completed: order.executionStatus === 'Выполнено',
@@ -103,7 +110,9 @@
               {{ order.executionStatus }}
             </div>
           </td>
-          <td class="tui-table__td tui-table__td_align_center">
+          <td class="tui-table__td tui-table__td_align_center"
+          [tuiHighlight]="this.form.value.searchAll"
+          [tuiHighlightColor]="'#228B22'">
             <div>{{ order.cost | number : "1.2-2" }} ₽</div>
             <div>{{ order.paymentStatus }}</div>
           </td>

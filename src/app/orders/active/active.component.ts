@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  NgZone,
   OnInit,
   QueryList,
   ViewChild,
@@ -12,7 +13,7 @@ import { OrderService } from '../../_services/order.service';
 import { Order, Service } from '../order.model';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
-import { Observable } from 'rxjs';
+import { Observable, Subscription, debounceTime, fromEvent, take } from 'rxjs';
 import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
@@ -76,16 +77,21 @@ export class ActiveComponent implements OnInit {
   ] as const;
   orders: Order[] = [];
   selectedItems: Set<string> = new Set();
-  isAllSelected: boolean = false;
   totalPages: number = 0;
   currentPage: number = 0;
   hasOrders: boolean = true;
+
+  sizePerPage: number = 5; // Начальное значение
+  private resizeSubscription!: Subscription;
+
+  @ViewChild('tableContainer') tableContainer!: ElementRef;
 
   constructor(
     private orderService: OrderService,
     private fb: FormBuilder,
     private storageService: StorageService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -150,6 +156,81 @@ export class ActiveComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit() {
+    // Подписываемся на изменение размеров окна
+    this.resizeSubscription = fromEvent(window, 'resize')
+      .pipe(debounceTime(200)) // Добавляем задержку, чтобы не перегружать обработчик
+      .subscribe(() => {
+        this.calculateSizePerPage();
+      });
+  }
+
+  ngOnDestroy() {
+    // Отписываемся от событий при уничтожении компонента
+    if (this.resizeSubscription) {
+      this.resizeSubscription.unsubscribe();
+    }
+  }
+
+  private previousSizePerPage: number = this.sizePerPage;
+
+  calculateSizePerPage(): void {
+    const availableHeight = this.getAvailableHeight();
+    const itemHeight = this.getItemHeight();
+
+    if (itemHeight > 0) {
+      const newSizePerPage = Math.floor(availableHeight / itemHeight);
+      const clampedSize = Math.max(1, Math.min(newSizePerPage, 100));
+
+      // Only update and fetch if the calculated size differs from the current and previous values
+      if (
+        clampedSize !== this.sizePerPage &&
+        clampedSize !== this.previousSizePerPage
+      ) {
+        this.sizePerPage = clampedSize;
+        this.previousSizePerPage = clampedSize;
+        this.fetchOrders(this.currentPage);
+      }
+    } else {
+      // Default value if calculation fails
+      const defaultSize = 3;
+      if (
+        defaultSize !== this.sizePerPage &&
+        defaultSize !== this.previousSizePerPage
+      ) {
+        this.sizePerPage = defaultSize;
+        this.previousSizePerPage = defaultSize;
+        this.fetchOrders(this.currentPage);
+      }
+    }
+  }
+
+  getAvailableHeight(): number {
+    const windowHeight = window.innerHeight;
+    const headerHeight =
+      document.querySelector('.custom-header')?.clientHeight || 0;
+    const filtersHeight = document.querySelector('.filters')?.clientHeight || 0;
+    const tabsHeight =
+      document.querySelector('.orders tui-tabs')?.clientHeight || 0;
+    const paginationHeight = 150; // Предполагаемая высота пагинации
+    const margins = 150; // Дополнительные отступы
+
+    return (
+      windowHeight -
+      headerHeight -
+      filtersHeight -
+      tabsHeight -
+      paginationHeight -
+      margins
+    );
+  }
+
+  getItemHeight(): number {
+    const rowElement =
+      this.tableContainer.nativeElement.querySelector('.tui-table__tr');
+    return rowElement ? rowElement.clientHeight : 0;
+  }
+
   get checked(): boolean | null {
     const every = this.orders.every(({ selected }) => selected);
     const some = this.orders.some(({ selected }) => selected);
@@ -166,7 +247,7 @@ export class ActiveComponent implements OnInit {
   fetchOrders(index: number) {
     this.currentPage = index;
     const page = this.currentPage;
-    const sizePerPage = 3;
+    const sizePerPage = this.sizePerPage;
     const sortField = 'COST';
     const sortDirection = 'DESC';
     const archive = false;
@@ -238,6 +319,12 @@ export class ActiveComponent implements OnInit {
               this.totalPages = data.totalPages;
             }
             this.cdRef.markForCheck();
+            this.cdRef.detectChanges();
+
+            // Wait for Angular to stabilize the view before calculating sizePerPage
+            this.ngZone.onStable.pipe(take(1)).subscribe(() => {
+              this.calculateSizePerPage();
+            });
           },
           error: (error: any) => {
             console.error('Error while fetching orders:', error);

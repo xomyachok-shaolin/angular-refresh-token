@@ -30,6 +30,7 @@ export class AppComponent {
 
   eventBusSub?: Subscription;
   dropdownOpen = false;
+  private closeDropdownTimer: any;
 
   constructor(
     private readonly storageService: StorageService,
@@ -76,9 +77,21 @@ export class AppComponent {
   }
 
   toggleDropdown(open: boolean): void {
-    this.dropdownOpen = open;
-    this.cdr.detectChanges();
+    if (open) {
+      if (this.closeDropdownTimer) {
+        clearTimeout(this.closeDropdownTimer);
+        this.closeDropdownTimer = null;
+      }
+      this.dropdownOpen = true;
+    } else {
+      // Добавляем задержку перед закрытием
+      this.closeDropdownTimer = setTimeout(() => {
+        this.dropdownOpen = false;
+        this.cdr.detectChanges();
+      }, 400);
+    }
   }
+
 
   checkLoginState(): void {
     this.isLoggedIn = this.storageService.isLoggedIn();

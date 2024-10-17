@@ -12,8 +12,8 @@ import {
 import { OrderService } from '../../_services/order.service';
 import { Order, Service } from '../order.model';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
-import { Observable,  Subscription, debounceTime, fromEvent, take  } from 'rxjs';
+import { TuiAlertService, TuiDialogService, TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
+import { Observable,  Subscription, debounceTime, fromEvent, switchMap, take  } from 'rxjs';
 import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
@@ -22,7 +22,7 @@ import {
   TuiDay,
 } from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
-import { tuiItemsHandlersProvider } from '@taiga-ui/kit';
+import { TUI_PROMPT, TuiPromptData, tuiItemsHandlersProvider } from '@taiga-ui/kit';
 
 @Component({
   selector: 'app-archived',
@@ -91,7 +91,9 @@ export class ArchivedComponent implements OnInit {
     private fb: FormBuilder,
     private storageService: StorageService,
     private cdRef: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private dialogService: TuiDialogService,
+    private alertService: TuiAlertService
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -339,6 +341,44 @@ export class ArchivedComponent implements OnInit {
       console.error('UUID пользователя не найден.');
       this.hasOrders = false;
     }
+  }  
+
+  unarchiveSelectedOrder(orderUuid: string) {
+    const data: TuiPromptData = {
+      content: 'Вы уверены, что хотите вернуть из архива этот заказ?',
+      yes: 'Да',
+      no: 'Отмена',
+    };
+  
+    this.dialogService
+      .open<boolean>(TUI_PROMPT, {
+        label: 'Подтверждение',
+        size: 's',
+        data,
+      })
+      .pipe(
+        switchMap((confirmed) => {
+          if (confirmed) {
+            return this.orderService.unarchiveOrder(orderUuid);
+          } else {
+            return []; // Return an empty observable if the user cancels
+          }
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.alertService
+            .open('Заказ успешно разархивирован.', { status: 'success' }) // Показываем текст ответа
+            .subscribe();
+          this.fetchOrders(this.currentPage); // Обновляем список заказов
+        },
+        error: (error) => {
+          console.error('Ошибка при помещении заказа в архив:', error);
+          this.alertService
+            .open('Ошибка при помещении заказа в архив.', { status: 'error' })
+            .subscribe();
+        },
+      });
   }  
 
   private mapStatus(status: string): string {

@@ -138,7 +138,9 @@
               <tui-data-list size="m">
                 <button tuiOption>Подробнее о заказе</button>
                 <button tuiOption>Скачать счет</button>
-                <button tuiOption>Вернуть из архива</button>
+                <button tuiOption (click)="unarchiveSelectedOrder(order.uuid)">
+                  Вернуть из архива
+                </button> 
                 <button tuiOption>Удалить заказ</button>
               </tui-data-list>
             </ng-template>

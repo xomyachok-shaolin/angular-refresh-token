@@ -113,4 +113,23 @@ export class OrderService {
       headers: this.getAuthHeaders(),
     });
   }
+
+  archiveOrder(uuid: string): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.patch(`/api/order/archive`, null, {
+      headers,
+      params: new HttpParams().set('uuid', uuid),
+      responseType: 'text',
+    });
+  }
+
+  unarchiveOrder(uuid: string): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.patch(`/api/order/unarchive`, null, {
+      headers,
+      params: new HttpParams().set('uuid', uuid),
+      responseType: 'text',
+    });
+  }
+  
 }

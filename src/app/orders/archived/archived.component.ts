@@ -12,8 +12,21 @@ import {
 import { OrderService } from '../../_services/order.service';
 import { Order, Service } from '../order.model';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { TuiAlertService, TuiDialogService, TuiDriver, TuiOptionComponent } from '@taiga-ui/core';
-import { Observable,  Subscription, debounceTime, fromEvent, switchMap, take  } from 'rxjs';
+import {
+  TuiAlertService,
+  TuiDialogService,
+  TuiDriver,
+  TuiOptionComponent,
+} from '@taiga-ui/core';
+import {
+  Observable,
+  Subscription,
+  debounceTime,
+  forkJoin,
+  fromEvent,
+  switchMap,
+  take,
+} from 'rxjs';
 import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
@@ -22,7 +35,11 @@ import {
   TuiDay,
 } from '@taiga-ui/cdk';
 import { StorageService } from '../../_services/storage.service';
-import { TUI_PROMPT, TuiPromptData, tuiItemsHandlersProvider } from '@taiga-ui/kit';
+import {
+  TUI_PROMPT,
+  TuiPromptData,
+  tuiItemsHandlersProvider,
+} from '@taiga-ui/kit';
 
 @Component({
   selector: 'app-archived',
@@ -100,7 +117,7 @@ export class ArchivedComponent implements OnInit {
       selectedStatuses: [[]],
       dateRange: new FormControl(null),
       searchAll: new FormControl(''),
-   });
+    });
   }
 
   public availableServices: Array<{ label: string; value: string }> = [
@@ -253,22 +270,22 @@ export class ArchivedComponent implements OnInit {
     const sortField = 'COST';
     const sortDirection = 'DESC';
     const archive = true;
-  
+
     // Get user UUID from StorageService
     const user = this.storageService.getUser();
     const uuid = user ? user.uuid : null;
-  
+
     if (uuid) {
       const selectedServices = this.form.value.selectedServices;
       const selectedServiceValues = selectedServices
         ? selectedServices.map((s: any) => s.value)
         : [];
-  
+
       const selectedStatuses = this.form.value.selectedStatuses;
       const selectedStatusValues = selectedStatuses
         ? selectedStatuses.map((s: any) => s.value)
         : [];
-  
+
       const dateRange = this.form.value.dateRange;
       const startDate =
         dateRange?.from instanceof TuiDay
@@ -278,7 +295,7 @@ export class ArchivedComponent implements OnInit {
         dateRange?.to instanceof TuiDay
           ? dateRange.to.toLocalNativeDate()
           : null;
-  
+
       this.orderService
         .getPaginatedArchivedUserOrders(
           uuid,
@@ -334,14 +351,14 @@ export class ArchivedComponent implements OnInit {
             this.hasOrders = false;
             this.orders = []; // Ensure orders list is empty
             this.totalPages = 0;
-            this.cdRef.markForCheck(); 
+            this.cdRef.markForCheck();
           },
         });
     } else {
       console.error('UUID пользователя не найден.');
       this.hasOrders = false;
     }
-  }  
+  }
 
   unarchiveSelectedOrder(orderUuid: string) {
     const data: TuiPromptData = {
@@ -349,7 +366,7 @@ export class ArchivedComponent implements OnInit {
       yes: 'Да',
       no: 'Отмена',
     };
-  
+
     this.dialogService
       .open<boolean>(TUI_PROMPT, {
         label: 'Подтверждение',
@@ -379,7 +396,7 @@ export class ArchivedComponent implements OnInit {
             .subscribe();
         },
       });
-  }  
+  }
 
   private mapStatus(status: string): string {
     switch (status) {
@@ -401,5 +418,94 @@ export class ArchivedComponent implements OnInit {
       return 'No Services';
     }
     return services.map((service) => service.title).join(' ');
+  }
+
+  get anySelected(): boolean {
+    return this.orders.some((order) => order.selected);
+  }
+
+  unarchiveSelectedOrders() {
+    const selectedOrders = this.orders.filter((order) => order.selected);
+    if (selectedOrders.length === 0) {
+      return;
+    }
+
+    const data: TuiPromptData = {
+      content: `Вы уверены, что хотите вернуть ${
+        selectedOrders.length
+      } выбранн${this.getSelectedForm(
+        selectedOrders.length
+      )} ${this.getOrderWord(selectedOrders.length)} из архива?`,
+      yes: 'Да',
+      no: 'Отмена',
+    };
+
+    this.dialogService
+      .open<boolean>(TUI_PROMPT, {
+        label: 'Подтверждение',
+        size: 's',
+        data,
+      })
+      .pipe(
+        switchMap((confirmed) => {
+          if (confirmed) {
+            const archiveObservables = selectedOrders.map((order) =>
+              this.orderService.unarchiveOrder(order.uuid)
+            );
+            return forkJoin(archiveObservables);
+          } else {
+            return []; // Возвращаем пустой observable, если пользователь отменил действие
+          }
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.alertService
+            .open('Выбранные заказы успешно возвращены из архива.', {
+              status: 'success',
+            })
+            .subscribe();
+          this.fetchOrders(this.currentPage); // Обновляем список заказов
+        },
+        error: (error) => {
+          console.error('Ошибка при возвращении заказов из архива:', error);
+          this.alertService
+            .open('Ошибка при возвращении заказов из архива.', {
+              status: 'error',
+            })
+            .subscribe();
+        },
+      });
+  }
+
+  get selectedCount(): number {
+    return this.orders.filter((order) => order.selected).length;
+  }
+
+  clearSelection() {
+    this.orders.forEach((order) => (order.selected = false));
+  }
+
+  // Функция для выбора правильного склонения слова "выбран"
+  getSelectedWord(count: number): string {
+    return count === 1 ? 'Выбран' : 'Выбрано';
+  }
+
+  // Функция для выбора правильного окончания слова "заказ"
+  getOrderWord(count: number): string {
+    if (count === 1) {
+      return 'заказ';
+    }
+
+    const cases = [2, 0, 1, 1, 1, 2];
+    const titles = ['заказ', 'заказа', 'заказов'];
+    return titles[
+      count % 100 > 4 && count % 100 < 20 ? 2 : cases[Math.min(count % 10, 5)]
+    ];
+  }
+
+  // Функция для выбора правильного склонения слова "выбранных"
+  getSelectedForm(count: number): string {
+    return count === 1 ? 'ый' : 'ых';
   }
 }

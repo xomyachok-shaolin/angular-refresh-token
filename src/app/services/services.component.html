@@ -12,10 +12,10 @@
   <div class="content">
     <div class="main-container">
       <div class="left-panel">
-        <div class="map-container" style="position: relative;">
+        <div class="map-container" style="position: relative">
           <!-- Leaflet map placeholder -->
           <div id="map" style="height: 100%; border-radius: 16px"></div>
-      
+
           <!-- Loader positioned over the map -->
           <tui-loader
             [showLoader]="isLoading"
@@ -23,11 +23,40 @@
             [overlay]="true"
             class="map-loader"
           ></tui-loader>
+
+          <!-- Filter Icon Button -->
+          <button
+          *ngIf="selectedService"
+            class="filter-button"
+            tuiIconButton
+            appearance="flat"
+            size="l"
+            icon="tuiIconFilterLarge"
+            (click)="toggleFilter()"
+          ></button>
+
+          <!-- Year Range Slider -->
+          <div class="year-range-slider" *ngIf="showYearRangeSlider && selectedService">
+            <tui-input-range
+              [formControl]="yearRangeControl"
+              [min]="minYear"
+              [max]="maxYear"
+              [steps]="yearSteps"
+              [quantum]="1"
+              [tuiTextfieldSize]="'m'"
+            >
+            Выбор периода съемки
+          </tui-input-range>
+            <div class="year-labels">
+              <span>{{ minYear }} год</span>
+              <span>{{ maxYear }} год</span>
+            </div>
+          </div>
         </div>
       </div>
-      
+
       <div class="right-panel">
-        <tui-accordion >
+        <tui-accordion>
           <!-- Service selection accordion item -->
           <tui-accordion-item [open]="true">
             <div tuiAccordionItemTitle>Выбор услуги</div>
@@ -57,13 +86,13 @@
             <div tuiAccordionItemTitle>Выбор параметров</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <button
-              class="btn-draw"
-              size="m"
-              tuiButton
-              *ngIf="!isDrawingEnabled"
-              [disabled]="!selectedService"
-              (click)="startDrawing()"
-            >
+                class="btn-draw"
+                size="m"
+                tuiButton
+                *ngIf="!isDrawingEnabled"
+                [disabled]="!selectedService"
+                (click)="startDrawing()"
+              >
                 Нажмите для выбора территории
               </button>
               <button

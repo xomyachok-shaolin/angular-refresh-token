@@ -22,6 +22,7 @@ import {
   Observable,
   Subscription,
   debounceTime,
+  forkJoin,
   fromEvent,
   switchMap,
   take,
@@ -416,5 +417,93 @@ export class ActiveComponent implements OnInit {
       return 'No Services';
     }
     return services.map((service) => service.title).join(' ');
+  }
+
+  get anySelected(): boolean {
+    return this.orders.some((order) => order.selected);
+  }
+
+  archiveSelectedOrders() {
+    const selectedOrders = this.orders.filter((order) => order.selected);
+    if (selectedOrders.length === 0) {
+      return;
+    }
+
+    const data: TuiPromptData = {
+      content: `Вы уверены, что хотите поместить ${
+        selectedOrders.length
+      } выбранн${this.getSelectedForm(
+        selectedOrders.length
+      )} ${this.getOrderWord(selectedOrders.length)} в архив?`,
+      yes: 'Да',
+      no: 'Отмена',
+    };
+
+    this.dialogService
+      .open<boolean>(TUI_PROMPT, {
+        label: 'Подтверждение',
+        size: 's',
+        data,
+      })
+      .pipe(
+        switchMap((confirmed) => {
+          if (confirmed) {
+            const archiveObservables = selectedOrders.map((order) =>
+              this.orderService.archiveOrder(order.uuid)
+            );
+            return forkJoin(archiveObservables);
+          } else {
+            return []; // Возвращаем пустой observable, если пользователь отменил действие
+          }
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.alertService
+            .open('Выбранные заказы успешно помещены в архив.', {
+              status: 'success',
+            })
+            .subscribe();
+          this.fetchOrders(this.currentPage); // Обновляем список заказов
+        },
+        error: (error) => {
+          console.error('Ошибка при помещении заказов в архив:', error);
+          this.alertService
+            .open('Ошибка при помещении заказов в архив.', { status: 'error' })
+            .subscribe();
+        },
+      });
+  }
+
+  // Добавьте в свой класс ActiveComponent
+  get selectedCount(): number {
+    return this.orders.filter((order) => order.selected).length;
+  }
+
+  clearSelection() {
+    this.orders.forEach((order) => (order.selected = false));
+  }
+
+  // Функция для выбора правильного склонения слова "выбран"
+  getSelectedWord(count: number): string {
+    return count === 1 ? 'Выбран' : 'Выбрано';
+  }
+
+  // Функция для выбора правильного окончания слова "заказ"
+  getOrderWord(count: number): string {
+    if (count === 1) {
+      return 'заказ';
+    }
+
+    const cases = [2, 0, 1, 1, 1, 2];
+    const titles = ['заказ', 'заказа', 'заказов'];
+    return titles[
+      count % 100 > 4 && count % 100 < 20 ? 2 : cases[Math.min(count % 10, 5)]
+    ];
+  }
+
+  // Функция для выбора правильного склонения слова "выбранных"
+  getSelectedForm(count: number): string {
+    return count === 1 ? 'ый' : 'ых';
   }
 }

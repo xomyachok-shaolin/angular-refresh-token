@@ -3,6 +3,9 @@ import { AuthService } from '../_services/auth.service';
 import { NgForm, NgModel } from '@angular/forms';
 import { TuiAlertService } from '@taiga-ui/core';
 import { Router } from '@angular/router';
+import { StorageService } from '../_services/storage.service';
+import { EventBusService } from '../_shared/event-bus.service';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -20,6 +23,8 @@ export class RegisterComponent {
   errorMessage = '';
   showErrorNotification = false;
   passwordsMatch = true;
+  isLoggedIn = false; 
+  roles: string[] = []; 
 
   @ViewChild('password') passwordControl!: NgModel;
   @ViewChild('confirmPassword') confirmPasswordControl!: NgModel;
@@ -28,7 +33,9 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private alertService: TuiAlertService
+    private alertService: TuiAlertService,
+    private storageService: StorageService, 
+    private eventBusService: EventBusService 
   ) {}
 
   checkPasswordsMatch(): boolean {
@@ -44,26 +51,42 @@ export class RegisterComponent {
 
     const { email, password } = this.form;
 
-    this.authService.register(email, password).subscribe({
-      next: (data) => {
-        console.log(data);
-        this.alertService
-          .open('Вы успешно зарегистрировались!', { status: 'success' })
-          .subscribe();
-          this.router.navigate(['/login']);
-        // this.isSuccessful = true;
-        // this.isSignUpFailed = false;
-        // this.showErrorNotification = false;
-      },
-      error: (err) => {
-        this.errorMessage = err.error;
-        this.alertService
-          .open(this.errorMessage, { status: 'error' })
-          .subscribe();
-        // this.isSignUpFailed = true;
-        // this.showErrorNotification = true;
-      },
-    });
+    this.authService
+      .register(email, password)
+      .pipe(
+        switchMap(() => this.authService.login(email, password)) // После регистрации выполняем вход
+      )
+      .subscribe({
+        next: (data) => {
+          this.storageService.saveUser(data, true); // Сохраняем данные пользователя
+          this.isLoggedIn = true;
+          this.roles = this.storageService.getUser().roles;
+
+          // Уведомляем приложение о входе
+          this.eventBusService.emit({
+            name: 'login',
+            value: { user: this.storageService.getUser() },
+          });
+
+          this.alertService
+            .open('Вы успешно зарегистрировались и вошли в систему!', { status: 'success' })
+            .subscribe();
+
+          // Перенаправляем пользователя в личный кабинет
+          this.router
+            .navigate(['/personal-cabinet'], { replaceUrl: true })
+            .then(() => {
+              window.location.reload();
+              this.cdr.detectChanges(); // Обновляем после перехода на другую страницу
+            });
+        },
+        error: (err) => {
+          this.errorMessage = err.error || 'Ошибка при регистрации или входе';
+          this.alertService
+            .open(this.errorMessage, { status: 'error' })
+            .subscribe();
+        },
+      });
   }
 
   onCloseNotification(): void {

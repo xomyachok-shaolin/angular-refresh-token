@@ -49,7 +49,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'active', pathMatch: 'full' },
     ],
   },
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: '**', redirectTo: '/login' },
 ];
 

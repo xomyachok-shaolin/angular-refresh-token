@@ -49,6 +49,23 @@
   </form>
 </div>
 
+<div
+  *ngIf="anySelected"
+  class="bulk-actions-footer"
+>
+<div class="bulk-info">
+  {{ getSelectedWord(selectedCount) }} {{ selectedCount }} {{ getOrderWord(selectedCount) }}
+</div>
+<div class="bulk-buttons">
+    <button tuiButton size="m" appearance="outline" (click)="clearSelection()">
+      Снять выделение
+    </button>
+    <button tuiButton size="m" appearance="primary" (click)="unarchiveSelectedOrders()">
+      Вернуть из архива
+    </button>
+  </div>
+</div>
+
 <div class="order-table table-container" *ngIf="hasOrders; else noOrders" #tableContainer>
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>

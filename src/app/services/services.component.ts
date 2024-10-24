@@ -6,7 +6,7 @@ import 'leaflet-draw';
 import drawLocales from 'leaflet-draw-locales';
 import * as turf from '@turf/turf';
 import { FormControl } from '@angular/forms';
-import { TuiDialogService } from '@taiga-ui/core';
+import { TuiDialogService, tuiNumberFormatProvider } from '@taiga-ui/core';
 import './SmoothWheelZoom.js';
 
 drawLocales('ru');
@@ -43,6 +43,11 @@ interface Parameter {
   selector: 'app-services',
   templateUrl: './services.component.html',
   styleUrls: ['./services.component.scss'],
+  providers: [
+    tuiNumberFormatProvider({
+        zeroPadding: false,
+    }),
+],
 })
 export class ServicesComponent implements OnInit {
   map: any;
@@ -83,12 +88,32 @@ export class ServicesComponent implements OnInit {
 
   formattedArea: string = '';
 
+  showYearRangeSlider: boolean = false;
+  yearRangeControl: FormControl<[number, number] | null> = new FormControl([
+    2000, 2023,
+  ]);
+  minYear: number = 2000;
+  maxYear: number = 2023;
+  yearSteps: number = this.maxYear - this.minYear;
+  restrictionPolygonsData: any[] = [];
+  legendControl: L.Control | null = null;
+
   constructor(private router: Router, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.initMap();
-    this.fetchRestrictionPolygons();
     this.fetchServices();
+
+    // Subscribe to valueChanges of the yearRangeControl
+    this.yearRangeControl.valueChanges.subscribe(
+      (range: [number, number] | null) => {
+        if (range) {
+          this.onYearRangeChange(range);
+        }
+      }
+    );
+
+    this.fetchRestrictionPolygons();
   }
 
   initMap(): void {
@@ -116,7 +141,7 @@ export class ServicesComponent implements OnInit {
           polygon: {
             shapeOptions: {
               color: 'magenta',
-              fillOpacity: 0.0,
+              fillOpacity: 0.2,
             },
             allowIntersection: false,
             showArea: false,
@@ -141,6 +166,14 @@ export class ServicesComponent implements OnInit {
         this.drawnLayers.addLayer(layer);
         this.isConfirmDisabled = false;
         this.updateArea();
+
+        // Добавляем обработчики событий для изменения непрозрачности заливки при наведении
+        layer.on('mouseover', function () {
+          layer.setStyle({ fillOpacity: 0.5 }); // Увеличиваем непрозрачность при наведении
+        });
+        layer.on('mouseout', function () {
+          layer.setStyle({ fillOpacity: 0.2 }); // Возвращаем непрозрачность при уходе курсора
+        });
       });
 
       this.map.on(L.Draw.Event.DRAWSTART, (event: any) => {
@@ -241,7 +274,7 @@ export class ServicesComponent implements OnInit {
               );
             }
           }
-        }); 
+        });
         this.updateArea();
       });
 
@@ -345,29 +378,29 @@ export class ServicesComponent implements OnInit {
   };
 
   updateArea(): void {
-    const areaValue = this.drawnLayers.getLayers().reduce((sum, layer) => {
-      if (layer instanceof L.Polygon) {
-        const latLngs = layer.getLatLngs() as L.LatLng[][];
-        const coords = latLngs[0].map((latLng) => [latLng.lng, latLng.lat]);
+    const areaValue =
+      this.drawnLayers.getLayers().reduce((sum, layer) => {
+        if (layer instanceof L.Polygon) {
+          const latLngs = layer.getLatLngs() as L.LatLng[][];
+          const coords = latLngs[0].map((latLng) => [latLng.lng, latLng.lat]);
 
-        // Ensure the polygon is closed
-        if (
-          coords[0][0] !== coords[coords.length - 1][0] ||
-          coords[0][1] !== coords[coords.length - 1][1]
-        ) {
-          coords.push(coords[0]);
+          // Ensure the polygon is closed
+          if (
+            coords[0][0] !== coords[coords.length - 1][0] ||
+            coords[0][1] !== coords[coords.length - 1][1]
+          ) {
+            coords.push(coords[0]);
+          }
+
+          const polygon = turf.polygon([coords]);
+          return sum + turf.area(polygon);
         }
-
-        const polygon = turf.polygon([coords]);
-        return sum + turf.area(polygon);
-      }
-      return sum;
-    }, 0) / 10000; // Convert to hectares
+        return sum;
+      }, 0) / 10000; // Convert to hectares
 
     // Format the area without commas and with two decimal places
     this.formattedArea = areaValue.toFixed(2).replace(/,/g, '');
   }
-
 
   removeLastVertex() {
     const lastPolygon =
@@ -467,14 +500,34 @@ export class ServicesComponent implements OnInit {
     this.parameters = [];
     this.selectedParameter = null;
     this.resetDrawingState();
+  
+    // Remove existing polygons and legend when service changes
+    this.toggleRestrictionPolygons(false);
+    if (this.legendControl) {
+      this.map.removeControl(this.legendControl);
+      this.legendControl = null;
+    }
+  
     if (service) {
       this.fetchParameters(service.uuid);
+      // If polygons data is already fetched, display the polygons
+      const range = this.yearRangeControl.value;
+      if (range) {
+        this.onYearRangeChange(range);
+      }
+    } else {
+      // Remove polygons and legend if no service is selected
+      this.toggleRestrictionPolygons(false);
+      if (this.legendControl) {
+        this.map.removeControl(this.legendControl);
+        this.legendControl = null;
+      }
     }
   }
+  
 
   fetchRestrictionPolygons(): void {
-    if (this.restrictionPolygons.length > 0) {
-      // Полигоны уже загружены
+    if (this.restrictionPolygonsData.length > 0) {
       return;
     }
 
@@ -483,13 +536,51 @@ export class ServicesComponent implements OnInit {
     const url = `/api/get_geo_json/`;
     this.http.get<any>(url).subscribe({
       next: (data) => {
-        this.restrictionPolygons = this.convertGeoJsonToPolygons(data);
+        this.restrictionPolygonsData = data; // Store the original data
+        this.initializeYearRange(); // Initialize year range values
       },
       error: (error) =>
         console.error('Ошибка при загрузке ограничительных полигонов', error),
       complete: () => (this.isLoading = false), // Завершение загрузки
     });
   }
+
+  initializeYearRange(): void {
+    const years = this.restrictionPolygonsData.map((item) => item.year);
+    this.minYear = Math.min(...years);
+    this.maxYear = Math.max(...years);
+    this.yearRangeControl.setValue([this.minYear, this.maxYear]);
+    this.yearSteps = this.maxYear - this.minYear;
+  }
+
+  // Toggle the visibility of the year range slider
+  toggleFilter(): void {
+    this.showYearRangeSlider = !this.showYearRangeSlider;
+  }
+
+  // Handle changes in the year range slider
+  onYearRangeChange(range: [number, number] | null): void {
+    if (range && this.selectedService) {
+      const [startYear, endYear] = range;
+      const filteredData = this.restrictionPolygonsData.filter(
+        (item) => item.year >= startYear && item.year <= endYear
+      );
+  
+      // Remove existing polygons from the map
+      this.restrictionPolygons.forEach((polygon) => this.map.removeLayer(polygon));
+  
+      // Convert filtered data to polygons and add to the map
+      this.restrictionPolygons = this.convertGeoJsonToPolygons(filteredData);
+      this.toggleRestrictionPolygons(true);
+    } else {
+      // No service selected or range is null
+      this.toggleRestrictionPolygons(false);
+      if (this.legendControl) {
+        this.map.removeControl(this.legendControl);
+        this.legendControl = null;
+      }
+    }
+  }  
 
   convertGeoJsonToPolygons(data: any[]): L.Polygon[] {
     const polygons: L.Polygon[] = [];
@@ -498,6 +589,8 @@ export class ServicesComponent implements OnInit {
     const years = data.map((item) => item.year);
     const minYear = Math.min(...years);
     const maxYear = Math.max(...years);
+
+    this.addLegend(minYear, maxYear);
 
     data.forEach((item: any) => {
       const coordinates = item.coordinates[0].map(
@@ -545,6 +638,9 @@ export class ServicesComponent implements OnInit {
   }
 
   getColorForYear(year: number, minYear: number, maxYear: number): string {
+    if (minYear === maxYear) {
+      return 'rgb(0, 0, 255)';
+    }
     // Цвета градиента (можете выбрать свои цвета)
     const startColor = [255, 0, 0]; // Красный
     const endColor = [0, 0, 255]; // Синий
@@ -565,26 +661,30 @@ export class ServicesComponent implements OnInit {
   }
 
   addLegend(minYear: number, maxYear: number): void {
-    const legend = new L.Control({ position: 'bottomright' });
+    // Remove existing legend if any
+    if (this.legendControl) {
+      this.map.removeControl(this.legendControl);
+    }
 
-    legend.onAdd = (map) => {
+    if (!this.selectedService) {
+      return;
+    }
+
+    this.legendControl = new L.Control({ position: 'bottomleft' });
+
+    this.legendControl.onAdd = (map) => {
       const div = L.DomUtil.create('div', 'info legend');
-      const grades = [minYear, maxYear];
-      const labels = [];
-
-      // Создайте легенду с градиентом
       div.innerHTML +=
-        '<i style="background: linear-gradient(to right, red , blue); width: 100px; height: 10px; display: block;"></i>';
+        '<i style="background: linear-gradient(to right, red , blue); width: 150px; height: 15px; display: block;"></i>';
       div.innerHTML += `<span>${minYear}</span><span style="float: right;">${maxYear}</span>`;
-
       return div;
     };
 
-    legend.addTo(this.map);
+    this.legendControl.addTo(this.map);
   }
 
   toggleRestrictionPolygons(show: boolean): void {
-    if (show) {
+    if (show && this.selectedService) {
       this.restrictionPolygons.forEach((polygon) => this.map.addLayer(polygon));
     } else {
       this.restrictionPolygons.forEach((polygon) =>

@@ -133,6 +133,36 @@ tui-toggle {
   height: 100%;
 }
 
+.filter-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1001; // Ensure it appears above the map
+  background-color: white;
+  border-radius: 50%;
+}
+
+.year-range-slider {
+  position: absolute;
+  bottom: 70px; // Adjust to appear above the filter button
+  right: 20px;
+  width: 200px; // Adjust as needed
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  z-index: 1001;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.year-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #555;
+  margin-top: 5px;
+}
+
+
 .map-loader {
   position: absolute;
   top: 50%;

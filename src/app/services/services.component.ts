@@ -526,16 +526,14 @@ export class ServicesComponent implements OnInit {
       if (range) {
         this.onYearRangeChange(range);
       }
-
-      } else {
+    } else {
+      this.openParametersAccordion = false;
       // Remove polygons and legend if no service is selected
       this.toggleRestrictionPolygons(false);
       if (this.legendControl) {
         this.map.removeControl(this.legendControl);
         this.legendControl = null;
       }
-
-      this.openParametersAccordion = false;
     }
   }
 

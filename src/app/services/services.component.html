@@ -61,7 +61,7 @@
       <div class="right-panel">
         <tui-accordion>
           <!-- Service selection accordion item -->
-          <tui-accordion-item [open]="openServiceAccordion">
+          <tui-accordion-item [(open)]="openServiceAccordion">
             <div tuiAccordionItemTitle>Выбор услуги</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <tui-combo-box
@@ -85,7 +85,8 @@
           </tui-accordion-item>
 
           <!-- Parameters selection accordion item -->
-          <tui-accordion-item [open]="openParametersAccordion">
+          <tui-accordion-item [(open)]="openParametersAccordion"
+          (openChange)="onAccordionItemOpen(1)">
             <div tuiAccordionItemTitle>Выбор параметров</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <button
@@ -137,10 +138,8 @@
           </tui-accordion-item>
 
           <!-- Calculation accordion item -->
-          <tui-accordion-item
-            [open]="openCalculationAccordion"
-            (openChange)="onAccordionItemOpen(2)"
-          >
+          <tui-accordion-item [open]="openCalculationAccordion"
+          (openChange)="onAccordionItemOpen(2)">
             <div tuiAccordionItemTitle>Расчет</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               Расчет

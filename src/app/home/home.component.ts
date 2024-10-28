@@ -1,33 +1,44 @@
-import { Component, OnInit } from '@angular/core';
-import { UserService } from '../_services/user.service';
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+
+interface Card {
+  title: string;
+  image: string;
+  description: string;
+}
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  styleUrls: ['./home.component.scss'],
 })
-export class HomeComponent implements OnInit {
-  content?: string;
+export class HomeComponent {
+  cards: Card[] = [
+    {
+      title: 'Сервис услуг',
+      image: 'assets/services.png',
+      description: 'Описание сервиса услуг. Здесь можно добавить информацию о сервисе.',
+    },
+    {
+      title: 'Сервис услуг',
+      image: 'assets/services1.png',
+      description: 'Описание сервиса услуг. Здесь можно добавить информацию о сервисе.',
+    },
+    {
+      title: 'Сервис услуг',
+      image: 'assets/services2.png',
+      description: 'Описание сервиса услуг. Здесь можно добавить информацию о сервисе.',
+    },
+  ];
 
-  constructor(private userService: UserService) { }
+  constructor(private router: Router) {
+    console.log('HomeComponent constructor called');
+  }
 
   ngOnInit(): void {
-    // this.userService.getPublicContent().subscribe({
-    //   next: data => {
-    //     this.content = data;
-    //   },
-    //   error: err => {
-    //     if (err.error) {
-    //       try {
-    //         const res = JSON.parse(err.error);
-    //         this.content = res.message;
-    //       } catch {
-    //         this.content = `Error with status: ${err.status} - ${err.statusText}`;
-    //       }
-    //     } else {
-    //       this.content = `Error with status: ${err.status}`;
-    //     }
-    //   }
-    // });
+    console.log('HomeComponent ngOnInit called');
+  }
+  navigateToServices(): void {
+    this.router.navigate(['/services']);
   }
 }

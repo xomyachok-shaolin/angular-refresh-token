@@ -26,7 +26,7 @@
 
           <!-- Filter Icon Button -->
           <button
-          *ngIf="selectedService"
+            *ngIf="selectedService"
             class="filter-button"
             tuiIconButton
             appearance="flat"
@@ -36,7 +36,10 @@
           ></button>
 
           <!-- Year Range Slider -->
-          <div class="year-range-slider" *ngIf="showYearRangeSlider && selectedService">
+          <div
+            class="year-range-slider"
+            *ngIf="showYearRangeSlider && selectedService"
+          >
             <tui-input-range
               [formControl]="yearRangeControl"
               [min]="minYear"
@@ -45,8 +48,8 @@
               [quantum]="1"
               [tuiTextfieldSize]="'m'"
             >
-            Выбор периода съемки
-          </tui-input-range>
+              Выбор периода съемки
+            </tui-input-range>
             <div class="year-labels">
               <span>{{ minYear }} год</span>
               <span>{{ maxYear }} год</span>
@@ -58,7 +61,7 @@
       <div class="right-panel">
         <tui-accordion>
           <!-- Service selection accordion item -->
-          <tui-accordion-item [open]="true">
+          <tui-accordion-item [open]="openServiceAccordion">
             <div tuiAccordionItemTitle>Выбор услуги</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <tui-combo-box
@@ -82,7 +85,7 @@
           </tui-accordion-item>
 
           <!-- Parameters selection accordion item -->
-          <tui-accordion-item (openChange)="onAccordionItemOpen(1)">
+          <tui-accordion-item [open]="openParametersAccordion">
             <div tuiAccordionItemTitle>Выбор параметров</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               <button
@@ -134,7 +137,10 @@
           </tui-accordion-item>
 
           <!-- Calculation accordion item -->
-          <tui-accordion-item (openChange)="onAccordionItemOpen(2)">
+          <tui-accordion-item
+            [open]="openCalculationAccordion"
+            (openChange)="onAccordionItemOpen(2)"
+          >
             <div tuiAccordionItemTitle>Расчет</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               Расчет
@@ -142,7 +148,10 @@
           </tui-accordion-item>
 
           <!-- Checkout accordion item -->
-          <tui-accordion-item (openChange)="onAccordionItemOpen(3)">
+          <tui-accordion-item
+            [open]="openCheckoutAccordion"
+            (openChange)="onAccordionItemOpen(3)"
+          >
             <div tuiAccordionItemTitle>Оформление</div>
             <div tuiAccordionItemContent class="custom-accordion-content">
               Оформление

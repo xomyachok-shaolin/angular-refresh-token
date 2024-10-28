@@ -1,0 +1,32 @@
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 49px;
+    background:#f7f7f7;
+  }
+
+  .card {
+    width: 450px;
+    margin: 19px;
+    text-align: center;
+    filter: drop-shadow(0px 4px 24px rgba(0, 0, 0, 0.12));
+  }
+  
+  .card-title {
+    margin-bottom: 32px;
+  }
+  
+  .card-image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px
+  }
+  
+  .card-description {
+    margin-bottom: 32px;
+  }
+  
+  button {
+    width: 100%;
+  }

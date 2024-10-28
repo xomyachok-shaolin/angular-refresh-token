@@ -118,4 +118,9 @@ export class AppComponent {
       },
     });
   }
+
+  get isHomeRoute() {
+    // Checks if the current route is '/login'
+    return this.router.url === '/home';
+  }
 }

@@ -45,9 +45,9 @@ interface Parameter {
   styleUrls: ['./services.component.scss'],
   providers: [
     tuiNumberFormatProvider({
-        zeroPadding: false,
+      zeroPadding: false,
     }),
-],
+  ],
 })
 export class ServicesComponent implements OnInit {
   map: any;
@@ -97,6 +97,11 @@ export class ServicesComponent implements OnInit {
   yearSteps: number = this.maxYear - this.minYear;
   restrictionPolygonsData: any[] = [];
   legendControl: L.Control | null = null;
+
+  openServiceAccordion: boolean = true; // Service Selection Accordion
+  openParametersAccordion: boolean = false; // Parameters Accordion
+  openCalculationAccordion: boolean = false; // Calculation Accordion
+  openCheckoutAccordion: boolean = false; // Checkout Accordion
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -500,14 +505,20 @@ export class ServicesComponent implements OnInit {
     this.parameters = [];
     this.selectedParameter = null;
     this.resetDrawingState();
-  
+
+    // Update accordion states
+    this.openServiceAccordion = false;
+    this.openParametersAccordion = !!service; // Open if service is selected
+    this.openCalculationAccordion = false;
+    this.openCheckoutAccordion = false;
+
     // Remove existing polygons and legend when service changes
     this.toggleRestrictionPolygons(false);
     if (this.legendControl) {
       this.map.removeControl(this.legendControl);
       this.legendControl = null;
     }
-  
+
     if (service) {
       this.fetchParameters(service.uuid);
       // If polygons data is already fetched, display the polygons
@@ -515,16 +526,18 @@ export class ServicesComponent implements OnInit {
       if (range) {
         this.onYearRangeChange(range);
       }
-    } else {
+
+      } else {
       // Remove polygons and legend if no service is selected
       this.toggleRestrictionPolygons(false);
       if (this.legendControl) {
         this.map.removeControl(this.legendControl);
         this.legendControl = null;
       }
+
+      this.openParametersAccordion = false;
     }
   }
-  
 
   fetchRestrictionPolygons(): void {
     if (this.restrictionPolygonsData.length > 0) {
@@ -565,10 +578,12 @@ export class ServicesComponent implements OnInit {
       const filteredData = this.restrictionPolygonsData.filter(
         (item) => item.year >= startYear && item.year <= endYear
       );
-  
+
       // Remove existing polygons from the map
-      this.restrictionPolygons.forEach((polygon) => this.map.removeLayer(polygon));
-  
+      this.restrictionPolygons.forEach((polygon) =>
+        this.map.removeLayer(polygon)
+      );
+
       // Convert filtered data to polygons and add to the map
       this.restrictionPolygons = this.convertGeoJsonToPolygons(filteredData);
       this.toggleRestrictionPolygons(true);
@@ -580,7 +595,7 @@ export class ServicesComponent implements OnInit {
         this.legendControl = null;
       }
     }
-  }  
+  }
 
   convertGeoJsonToPolygons(data: any[]): L.Polygon[] {
     const polygons: L.Polygon[] = [];

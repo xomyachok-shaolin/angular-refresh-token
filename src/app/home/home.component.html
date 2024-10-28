@@ -1,5 +1,14 @@
-<div class="container">
-  <header class="jumbotron">
-    <p> Главная </p>
-  </header>
+<div class="card-container">
+  <tui-island
+    *ngFor="let card of cards"
+    class="card"
+    size="l"
+  >
+    <h2 class="card-title">{{ card.title }}</h2>
+    <img [src]="card.image" alt="Service Image" class="card-image" />
+    <p class="card-description">{{ card.description }}</p>
+    <button tuiButton size="l" (click)="navigateToServices()">
+      Перейти в сервис
+    </button>
+  </tui-island>
 </div>

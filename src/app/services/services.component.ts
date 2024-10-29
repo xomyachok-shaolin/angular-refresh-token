@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
@@ -45,7 +45,7 @@ interface Parameter {
   styleUrls: ['./services.component.scss'],
   providers: [
     tuiNumberFormatProvider({
-      zeroPadding: false,
+      thousandSeparator: '',
     }),
   ],
 })
@@ -103,7 +103,7 @@ export class ServicesComponent implements OnInit {
   openCalculationAccordion: boolean = false; // Calculation Accordion
   openCheckoutAccordion: boolean = false; // Checkout Accordion
 
-  constructor(private router: Router, private http: HttpClient) {}
+  constructor(private router: Router, private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -119,6 +119,10 @@ export class ServicesComponent implements OnInit {
     );
 
     this.fetchRestrictionPolygons();
+  }
+
+  ngAfterViewChecked() {
+    this.cdr.detectChanges();
   }
 
   initMap(): void {
@@ -674,27 +678,59 @@ export class ServicesComponent implements OnInit {
   }
 
   addLegend(minYear: number, maxYear: number): void {
-    // Remove existing legend if any
+    // Удаляем существующую легенду, если она есть
     if (this.legendControl) {
       this.map.removeControl(this.legendControl);
     }
-
+  
     if (!this.selectedService) {
       return;
     }
-
+  
     this.legendControl = new L.Control({ position: 'bottomleft' });
-
+  
     this.legendControl.onAdd = (map) => {
       const div = L.DomUtil.create('div', 'info legend');
-      div.innerHTML +=
-        '<i style="background: linear-gradient(to right, red , blue); width: 150px; height: 15px; display: block;"></i>';
-      div.innerHTML += `<span>${minYear}</span><span style="float: right;">${maxYear}</span>`;
+      div.innerHTML = `
+        <div style="
+          background: white;
+          padding: 6px;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        ">
+                  <div style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #555;
+          ">
+            <span style="
+              background: white;
+              padding: 2px 6px;
+              border-radius: 3px;
+             ">${minYear} год</span>
+            <span style="
+              background: white;
+              padding: 2px 6px;
+              border-radius: 3px;
+            ">${maxYear} год</span>
+          </div>
+          <i style="
+            background: linear-gradient(to right, red , blue);
+            width: 150px;
+            height: 15px;
+            display: block;
+            margin-bottom: 5px;
+            border-radius: 4px;
+          "></i>
+
+        </div>
+      `;
       return div;
     };
-
+  
     this.legendControl.addTo(this.map);
-  }
+  }  
 
   toggleRestrictionPolygons(show: boolean): void {
     if (show && this.selectedService) {

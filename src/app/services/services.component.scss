@@ -110,6 +110,20 @@ tui-toggle {
   margin: -20px;
 }
 
+.year-label-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.year-label {
+  background-color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); /* Тень для выделения */
+  font-size: 12px;
+  color: #555;
+}
+
 .info.legend {
   background: white;
   padding: 6px 8px;
@@ -118,10 +132,11 @@ tui-toggle {
 }
 
 .info.legend i {
-  width: 18px;
-  height: 18px;
-  float: left;
-  margin-right: 8px;
+  background: white;
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .info.legend span {
@@ -137,9 +152,10 @@ tui-toggle {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  z-index: 1001; // Ensure it appears above the map
+  z-index: 1001; /* Ensure it appears above the map */
   background-color: white;
   border-radius: 50%;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05); 
 }
 
 .year-range-slider {

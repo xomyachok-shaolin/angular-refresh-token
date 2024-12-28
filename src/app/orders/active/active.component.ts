@@ -93,7 +93,6 @@ export class ActiveComponent implements OnInit {
     'Стоимость, статус оплаты',
   ] as const;
   orders: Order[] = [];
-  selectedItems: Set<string> = new Set();
   totalPages: number = 0;
   currentPage: number = 0;
   hasOrders: boolean = true;
@@ -354,7 +353,7 @@ export class ActiveComponent implements OnInit {
           },
         });
     } else {
-      console.error('UUID пользоваnеля не найден.');
+      console.error('UUID пользователя не найден.');
       this.hasOrders = false;
     }
   }

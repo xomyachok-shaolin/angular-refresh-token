@@ -112,7 +112,7 @@ tui-dropdown {
   .bulk-actions-footer {
     position: fixed;
     inset-inline-end: 0;
-    bottom: 0;
+    bottom: 0px;
     z-index: 99;
     display: flex;
     align-items: center;
@@ -121,9 +121,9 @@ tui-dropdown {
     padding-inline: 24px;
     padding-block: 0;
     box-sizing: border-box;
+    box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px, rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
     line-height: 64px;
-    box-shadow: 10px 5px 5px black;
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255);
     border-block-start: 1px solid rgba(5, 5, 5, 0.06);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);

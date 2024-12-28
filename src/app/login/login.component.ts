@@ -1,10 +1,19 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { AuthService } from '../_services/auth.service';
 import { StorageService } from '../_services/storage.service';
-import { Router } from '@angular/router'; // Добавляем Router
+import { Router } from '@angular/router';
 import { EventBusService } from '../_shared/event-bus.service';
 import { NgForm } from '@angular/forms';
-import { TuiAlertService } from '@taiga-ui/core';
+import {
+  TuiAlertService,
+} from '@taiga-ui/core';
 
 @Component({
   selector: 'app-login',
@@ -39,6 +48,10 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  @Input() isDialog: boolean = false;
+  @Output() loginSuccess = new EventEmitter<void>();
+  @Output() close = new EventEmitter<void>();
+
   onSubmit(form: NgForm): void {
     if (form.invalid) {
       return; // Прерываем выполнение, если форма невалидна
@@ -53,27 +66,28 @@ export class LoginComponent implements OnInit {
         this.isLoggedIn = true;
         this.roles = this.storageService.getUser().roles;
 
-        // Уведомляем приложение о входе
+        // Notify application about login
         this.eventBusService.emit({
           name: 'login',
           value: { user: this.storageService.getUser() },
         });
 
-        // Перенаправление в личный кабинет
-        this.router
-          .navigate(['/personal-cabinet'], { replaceUrl: true })
-          .then(() => {
+        if (this.isDialog) {
+          // When opened from ServicesComponent, emit success event
+          this.loginSuccess.emit();
+        } else {
+          // Not opened as a dialog, proceed as normal
+          this.router.navigate(['/personal-cabinet'], { replaceUrl: true }).then(() => {
             window.location.reload();
-            this.cdr.detectChanges(); // Обновление после перехода на другую страницу
+            this.cdr.detectChanges();
           });
+        }
       },
       error: (err) => {
         this.errorMessage = err.error || 'Ошибка при входе';
         this.alertService
           .open(this.errorMessage, { status: 'error' })
           .subscribe();
-        // this.isLoginFailed = true;
-        // this.showErrorNotification = true;
       },
     });
   }
@@ -84,5 +98,9 @@ export class LoginComponent implements OnInit {
 
   onCloseNotification(): void {
     this.showErrorNotification = false;
+  }
+
+  onClose(): void {
+    this.close.emit();
   }
 }

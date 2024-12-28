@@ -9,8 +9,8 @@ import { Router } from '@angular/router';
 export class SidebarComponent {
   constructor(private router: Router) {}
 
-  get isAuthRoute() {
+  get isForeignRoute() {
     // Checks if the current route is '/login'
-    return this.router.url === '/login' || this.router.url === '/register' || this.router.url === '/forgot-password' || this.router.url === '/reset-password';
+    return this.router.url === '/login' || this.router.url === '/register' || this.router.url === '/basket' || this.router.url === '/forgot-password' || this.router.url === '/reset-password';
   }
 }

@@ -1,0 +1,101 @@
+<tui-root>
+    <h2>Корзина</h2>
+    <tui-stepper [(activeItemIndex)]="currentStep">
+        <button tuiStep stepState="pass">Состав заказа</button>
+        <button tuiStep>Оформление заказа</button>
+        <button tuiStep>Подтверждение заказа</button>
+    </tui-stepper>
+
+    <div [ngSwitch]="currentStep">
+        <!-- Шаг 1: Состав заказа -->
+        <div *ngSwitchCase="0">
+            <div class="basket-table table-container" *ngIf="hasBasket; else noBasket" #tableContainer> 
+                <tui-scrollbar
+                waIntersectionRoot
+                class="scrollbar"
+            >
+                    <table tuiTable size="l" tuiTable class="table" [columns]="columns">
+                        <thead>
+                            <tr tuiThGroup>
+                                <th tuiTh 
+                                [sticky]="true">
+                                    <tui-checkbox [ngModel]="checked" (ngModelChange)="onCheck($event)"></tui-checkbox>
+                                </th>
+                                <th tuiTh 
+                                [sticky]="true">Услуга</th>
+                                <th tuiTh 
+                                [sticky]="true">Описание</th>
+                                <th tuiTh 
+                                [sticky]="true">Стоимость</th>
+                                <th tuiTh 
+                                [sticky]="true"></th>
+                            </tr>
+                        </thead>
+                        <tbody tuiTbody>
+                            <tr tui-table__tr *ngFor="let item of basketData"
+                                class="tui-table__tr tui-table__tr_border_top">
+                                <td class="tui-table__td tui-table__td_align_center">
+                                    <tui-checkbox [(ngModel)]="item.selected"></tui-checkbox>
+                                </td>
+                                <td class="tui-table__td tui-table__td_align_center">
+                                    {{ item.title}}
+                                </td>
+                                <td class="tui-table__td tui-table__td_align_center">
+                                    <div>{{ item.description}}</div>
+                                </td>
+                                <td class="tui-table__td tui-table__td_align_center">
+                                    <div>{{ item.cost | number : "1.2-2" }} ₽</div>
+                                </td>
+                                <td class="tui-table__td tui-table__td_align_center tui-table__td_last">
+                                    <tui-hosted-dropdown topRight [content]="menuContent">
+                                        <button appearance="flat" icon="tuiIconMoreVerticalLarge" shape="rounded"
+                                            size="s" title="More Actions" tuiDropdownSelection
+                                            tuiDropdownSelectionPosition="selection" tuiIconButton type="button"
+                                            (click)="onClick()"></button>
+                                    </tui-hosted-dropdown>
+                                    <ng-template #menuContent>
+                                        <tui-data-list size="m">
+                                            <button tuiOption (click)="deleteService(item.uuid)">Удалить</button>
+                                        </tui-data-list>
+                                    </ng-template>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </tui-scrollbar>
+            </div>
+            <div class="total-amount">
+                <p>Итоговая сумма: {{ totalAmount }} руб.</p>
+            </div>
+            <button tuiButton appearance="primary" (click)="nextStep()">
+                Перейти к оформлению
+            </button>
+        </div>
+
+        <ng-template #noBasket>
+            <div class="tui-text_body-m">Ваша корзина пуста</div>
+        </ng-template>
+
+        <!-- Шаг 2: Оформление заказа -->
+        <div *ngSwitchCase="1">
+            <h2>Оформление заказа</h2>
+            <!-- Форма для оформления заказа -->
+            <form #orderForm="ngForm">
+                <!-- Добавьте необходимые поля формы -->
+                <tui-input formControlName="address" label="Адрес доставки" placeholder="Введите адрес"></tui-input>
+                <!-- Добавьте другие поля по необходимости -->
+            </form>
+            <button tuiButton (click)="prevStep()">Назад</button>
+            <button tuiButton appearance="primary" (click)="placeOrder()">
+                Оформить заказ
+            </button>
+        </div>
+
+        <!-- Шаг 3: Подтверждение заказа -->
+        <div *ngSwitchCase="2">
+            <h2>Подтверждение заказа</h2>
+            <p>Ваш заказ успешно оформлен!</p>
+            <button tuiButton (click)="prevStep()">Назад</button>
+        </div>
+    </div>
+</tui-root>

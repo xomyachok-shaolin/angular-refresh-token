@@ -42,7 +42,8 @@
 }
 
 .right-panel {
-  max-width: 400px;
+  min-width: 420px;
+  max-width: 420px;
   flex: 1;
   padding-left: 32px;
 }
@@ -106,7 +107,7 @@ tui-toggle {
 
 .custom-accordion-content {
   background-color: #ECECEC;
-  padding: 20px;
+  padding: 16px;
   margin: -20px;
 }
 
@@ -152,7 +153,7 @@ tui-toggle {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  z-index: 1001; /* Ensure it appears above the map */
+  z-index: 1000; /* Ensure it appears above the map */
   background-color: white;
   border-radius: 50%;
   box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05); 
@@ -166,7 +167,7 @@ tui-toggle {
   padding: 10px;
   background-color: white;
   border-radius: 8px;
-  z-index: 1001;
+  z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -191,3 +192,78 @@ tui-toggle {
 ::ng-deep path.no-focus-poly.leaflet-interactive:focus {
   outline: none !important;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); // Semi-transparent background
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; // Ensure it's on top
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+
+::ng-deep tui-dialog .t-content {
+  padding: 0 !important;
+}
+
+.t-alert_status_success {
+  
+  color: var(--tui-success-fill);
+  background: var(--tui-success-bg) !important;
+  box-shadow: var(--tui-shadow-dropdown);
+  border-radius: var(--tui-radius-s);
+  
+}
+
+.t-alert_status_info { 
+  color: var(--tui-info-fill);
+  background: var(--tui-info-bg) !important;
+  box-shadow: var(--tui-shadow-dropdown);
+  border-radius: var(--tui-radius-s);
+  
+}
+
+.t-alert {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+}
+
+.t-alert__icon {
+  margin-right: 12px;
+}
+
+.t-alert__content {
+  flex: 1;
+}
+
+.t-alert__title {
+  font-size: 15px;
+  line-height: 24px;
+  margin-bottom: 4px;
+  color: black;
+  font-weight: bold;
+}
+
+.t-alert__text {
+  margin-bottom: 12px;
+  color: #1B1F3BA6;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.t-alert__buttons {
+  display: flex;
+  gap: 14px;
+} 

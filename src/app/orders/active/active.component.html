@@ -53,9 +53,10 @@
 <div
   *ngIf="anySelected"
   class="bulk-actions-footer"
+  tuiMode="onLight" 
 >
 <div class="bulk-info">
-  {{ getSelectedWord(selectedCount) }} {{ selectedCount }} {{ getOrderWord(selectedCount) }}
+  <strong>{{ getSelectedWord(selectedCount) }} {{ selectedCount }} {{ getOrderWord(selectedCount)}}</strong>
 </div>
 <div class="bulk-buttons">
     <button tuiButton size="m" appearance="outline" (click)="clearSelection()">
@@ -69,7 +70,7 @@
 
 
 
-<div class="order-table table-container" *ngIf="hasOrders; else noOrders" #tableContainer>
+<div class="table-container" *ngIf="hasOrders; else noOrders" #tableContainer>
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>
     <table size="l" tuiTable class="table" [columns]="columns">

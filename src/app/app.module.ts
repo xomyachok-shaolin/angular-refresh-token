@@ -23,6 +23,10 @@ import {
   TuiAlertModule,
   TuiSvgModule,
   TuiScrollbarModule,
+  TuiLinkModule,
+  TuiModeModule,
+  TuiScrollIntoViewModule,
+  TuiErrorModule,
 } from '@taiga-ui/core';
 
 import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
@@ -64,6 +68,11 @@ import {
   TuiInputRangeModule,
   TuiToggleModule,
   TuiHighlightModule,
+  TuiInputSliderModule,
+  TuiTextareaModule,
+  TuiStepperModule,
+  TuiInputFilesModule,
+  TuiFieldErrorPipeModule,
 } from '@taiga-ui/kit';
 import {
   TuiDropdownMobileModule,
@@ -79,11 +88,13 @@ import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
 import { OrderService } from './_services/order.service';
 import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
-import { TuiDropdownHostModule } from '@taiga-ui/cdk';
+import { TuiDropdownHostModule, TuiOverscrollModule, TuiScrollControlsModule } from '@taiga-ui/cdk';
 import { ServicesComponent } from './services/services.component';
 import { CommonModule } from '@angular/common';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
+import { BasketComponent } from './basket/basket.component';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @NgModule({
   declarations: [
@@ -106,6 +117,7 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
     ServicesComponent,
     ForgotPasswordComponent,
     ResetPasswordComponent,
+    BasketComponent,
   ],
   imports: [
     BrowserModule,
@@ -113,14 +125,24 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
     FormsModule,
     HttpClientModule,
     BrowserAnimationsModule,
+    TuiErrorModule,
     TuiAccordionModule,
     TuiIslandModule,
     TuiCheckboxLabeledModule,
     TuiNotificationModule,
     TuiPaginationModule,
     TuiHighlightModule,
+    TuiStepperModule,
     TuiSvgModule,
+    TuiLinkModule,
+    TuiModeModule,
+    TuiInputFilesModule,
     TuiScrollbarModule,
+		TuiScrollIntoViewModule,
+		TuiScrollControlsModule,
+    TuiFieldErrorPipeModule,
+		TuiOverscrollModule,
+    ScrollingModule,
     TuiTableModule,
     TuiSvgDefsHostModule,
     TuiInputDateRangeModule,
@@ -134,14 +156,16 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
     TuiButtonModule,
     TuiDialogModule,
     TuiBadgeModule,
+    TuiBadgedContentModule,
     TuiAvatarModule,
     TuiAlertModule,
     TuiTextfieldControllerModule,
+    TuiTextareaModule,
     TuiHintModule,
     TuiTabsModule,
-    TuiBadgedContentModule,
     TuiTabBarModule,
     TuiInputPasswordModule,
+    TuiInputSliderModule,
     TuiCheckboxModule,
     TuiDropdownModule,
     TuiDropdownMobileModule,

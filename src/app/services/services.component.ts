@@ -1,13 +1,44 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  filter,
+  finalize,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  Injector,
+  OnDestroy,
+  OnInit,
+  TemplateRef,
+  ViewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
 import 'leaflet-draw';
 import drawLocales from 'leaflet-draw-locales';
 import * as turf from '@turf/turf';
-import { FormControl } from '@angular/forms';
-import { TuiDialogService, tuiNumberFormatProvider } from '@taiga-ui/core';
+import { AbstractControl, FormControl, ValidatorFn } from '@angular/forms';
+import {
+  TuiAlertService,
+  TuiDialogService,
+  tuiNumberFormatProvider,
+} from '@taiga-ui/core';
 import './SmoothWheelZoom.js';
+import { TuiFileLike, tuiToggleOptionsProvider } from '@taiga-ui/kit';
+import { StorageService } from '../_services/storage.service';
+import { TUI_IS_E2E, TuiValidationError } from '@taiga-ui/cdk';
 
 drawLocales('ru');
 
@@ -31,12 +62,20 @@ interface Service {
 
 interface Parameter {
   title: string;
-  cost: number;
+  description?: string;
   parametersType: string;
   restrictions: any;
   polygon?: {
     points: { x: number; y: number }[];
   };
+  values?: any;
+  control?: any;
+}
+
+import { v4 as uuid } from 'uuid';
+
+interface ExtendedTuiFileLike extends TuiFileLike {
+  uid: string; // Unique identifier for the file
 }
 
 @Component({
@@ -47,9 +86,16 @@ interface Parameter {
     tuiNumberFormatProvider({
       thousandSeparator: '',
     }),
+    tuiToggleOptionsProvider({
+      icons: {
+        toggleOff: 'tuiIconClose',
+        toggleOn: 'tuiIconCheck',
+      },
+      showIcons: true,
+    }),
   ],
 })
-export class ServicesComponent implements OnInit {
+export class ServicesComponent implements OnInit, OnDestroy {
   map: any;
   drawControl: any;
   services: Service[] = [];
@@ -67,18 +113,22 @@ export class ServicesComponent implements OnInit {
   area: number = 0;
   heightEnabled: boolean = false;
 
+  hasHeightParameter: boolean = false;
+  hasTerritoryParameter: boolean = false;
+  hasTerritoryParameterInside: boolean = false;
+  hasCountParameter: boolean = false;
+
   readonly sliderStep = 1;
   readonly quantum = 0.00001;
 
   min = 0;
   max = 100;
   steps = (this.max - this.min) / this.sliderStep;
-  control = new FormControl([this.min, this.max]);
+  control = new FormControl(this.min);
 
   isLoading: boolean = true;
   selectedRestrictionPolygon: L.Polygon | null = null;
-
-  private readonly dialogs = inject(TuiDialogService);
+  currentGeometryParameter: Parameter | null = null;
 
   private cloneLatLngs(latlngs: L.LatLng[][]): number[][][] {
     return latlngs.map((ring) =>
@@ -103,7 +153,19 @@ export class ServicesComponent implements OnInit {
   openCalculationAccordion: boolean = false; // Calculation Accordion
   openCheckoutAccordion: boolean = false; // Checkout Accordion
 
-  constructor(private router: Router, private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  @ViewChild('contentSuccess', { static: true })
+  contentSuccess!: TemplateRef<any>;
+  @ViewChild('contentAuth', { static: true }) contentAuth!: TemplateRef<any>;
+
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private storageService: StorageService,
+    private alertService: TuiAlertService,
+    @Inject(TUI_IS_E2E) readonly isE2E: boolean,
+    @Inject(TuiDialogService) private readonly dialogService: TuiDialogService
+  ) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -114,16 +176,30 @@ export class ServicesComponent implements OnInit {
       (range: [number, number] | null) => {
         if (range) {
           this.onYearRangeChange(range);
+          this.cdr.detectChanges();
         }
       }
     );
 
     this.fetchRestrictionPolygons();
+
+    // Listen for Enter key press
+    document.addEventListener('keydown', this.onKeyDown);
   }
 
-  ngAfterViewChecked() {
-    this.cdr.detectChanges();
+  ngOnDestroy(): void {
+    document.removeEventListener('keydown', this.onKeyDown);
   }
+
+  onKeyDown = (event: KeyboardEvent) => {
+    if (
+      event.key === 'Enter' &&
+      !this.isConfirmDisabled &&
+      this.isDrawingEnabled
+    ) {
+      this.onConfirmCost();
+    }
+  };
 
   initMap(): void {
     setTimeout(() => {
@@ -171,6 +247,15 @@ export class ServicesComponent implements OnInit {
 
       this.map.on(L.Draw.Event.CREATED, (event: any) => {
         const layer = event.layer;
+        if (
+          this.currentGeometryParameter &&
+          this.currentGeometryParameter.restrictions.count
+        ) {
+          const maxCount = this.currentGeometryParameter.restrictions.count;
+          if (this.drawnLayers.getLayers().length >= maxCount) {
+            this.drawnLayers.removeLayer(this.drawnLayers.getLayers()[0]);
+          }
+        }
         layer.restrictionPolygon = this.selectedRestrictionPolygon;
         this.drawnLayers.addLayer(layer);
         this.isConfirmDisabled = false;
@@ -186,30 +271,35 @@ export class ServicesComponent implements OnInit {
       });
 
       this.map.on(L.Draw.Event.DRAWSTART, (event: any) => {
-        this.map.once('click', (e: L.LeafletMouseEvent) => {
-          const latlng = e.latlng;
-          let foundPolygon = false;
+        if (this.hasTerritoryParameter) {
+          this.map.once('click', (e: L.LeafletMouseEvent) => {
+            const latlng = e.latlng;
+            let foundPolygon = false;
 
-          for (const poly of this.restrictionPolygons) {
-            if (this.isPointInPolygon(latlng, [poly])) {
-              this.selectedRestrictionPolygon = poly;
-              poly.setStyle({ color: 'cyan' });
-              foundPolygon = true;
-              break;
+            for (const poly of this.restrictionPolygons) {
+              if (
+                this.isPointInPolygon(latlng, [poly]) ||
+                !this.hasTerritoryParameterInside
+              ) {
+                this.selectedRestrictionPolygon = poly;
+                poly.setStyle({ color: 'cyan' });
+                foundPolygon = true;
+                break;
+              }
             }
-          }
 
-          if (!foundPolygon) {
-            this.showErrorTooltip(
-              'Рисование можно начать только внутри одного из ограничивающих полигонов.',
-              latlng
-            );
-            const drawHandler =
-              this.drawControl._toolbars.draw._modes.polygon.handler;
-            drawHandler.disable();
-            drawHandler.enable();
-          }
-        });
+            if (!foundPolygon) {
+              this.showErrorTooltip(
+                'Рисование можно начать только внутри одного из ограничивающих полигонов.',
+                latlng
+              );
+              const drawHandler =
+                this.drawControl._toolbars.draw._modes.polygon.handler;
+              drawHandler.disable();
+              drawHandler.enable();
+            }
+          });
+        }
       });
 
       this.map.on('draw:editstart', (event: any) => {
@@ -275,7 +365,7 @@ export class ServicesComponent implements OnInit {
               }
             }
 
-            if (!isValid) {
+            if (!isValid && this.hasTerritoryParameterInside) {
               this.drawControl._toolbars['edit'].disable();
               this.showErrorTooltip(
                 'Отредактированный многоугольник должен находиться внутри ограниченной зоны.',
@@ -288,29 +378,34 @@ export class ServicesComponent implements OnInit {
       });
 
       this.map.on('draw:drawvertex', (event: any) => {
-        const layers = event.layers.getLayers();
-        for (let layer of layers) {
-          if (layer && layer instanceof L.Marker) {
-            const latlng = layer.getLatLng();
-            if (
-              this.selectedRestrictionPolygon &&
-              !this.isPointInPolygon(latlng, [this.selectedRestrictionPolygon])
-            ) {
-              this.showErrorTooltip(
-                'Вы можете рисовать только внутри выбранного полигона.',
-                latlng
-              );
-              const drawHandler =
-                this.drawControl._toolbars.draw._modes.polygon.handler;
-              if (drawHandler._poly?.getLatLngs().length <= 1) {
-                setTimeout(() => {
-                  drawHandler.disable();
-                  drawHandler.enable();
-                }, 0);
-              } else {
-                drawHandler.deleteLastVertex();
+        if (this.hasTerritoryParameter) {
+          const layers = event.layers.getLayers();
+          for (let layer of layers) {
+            if (layer && layer instanceof L.Marker) {
+              const latlng = layer.getLatLng();
+              if (
+                this.hasTerritoryParameterInside &&
+                this.selectedRestrictionPolygon &&
+                !this.isPointInPolygon(latlng, [
+                  this.selectedRestrictionPolygon,
+                ])
+              ) {
+                this.showErrorTooltip(
+                  'Вы можете рисовать только внутри выбранного полигона.',
+                  latlng
+                );
+                const drawHandler =
+                  this.drawControl._toolbars.draw._modes.polygon.handler;
+                if (drawHandler._poly?.getLatLngs().length <= 1) {
+                  setTimeout(() => {
+                    drawHandler.disable();
+                    drawHandler.enable();
+                  }, 0);
+                } else {
+                  drawHandler.deleteLastVertex();
+                }
+                return;
               }
-              return;
             }
           }
         }
@@ -321,11 +416,8 @@ export class ServicesComponent implements OnInit {
         const layer = event.layer;
         let latlng;
 
-        if (layer && layer.getLatLng) {
-          latlng = layer.getLatLng();
-        } else {
-          latlng = this.map.getCenter();
-        }
+        if (layer && layer.getLatLng) latlng = layer.getLatLng();
+        else latlng = this.map.getCenter();
 
         this.showErrorTooltip(error, latlng);
       });
@@ -356,6 +448,7 @@ export class ServicesComponent implements OnInit {
           this.selectedRestrictionPolygon = null;
         }
       });
+      this.cdr.detectChanges();
     }, 1000);
   }
 
@@ -423,15 +516,18 @@ export class ServicesComponent implements OnInit {
     }
   }
 
-  startDrawing(): void {
+  startDrawing(parameter: Parameter): void {
     if (!this.selectedService) {
-      this.showWarningDialog();
+      // this.showWarningDialog();
       return;
     }
+
+    this.currentGeometryParameter = parameter;
 
     if (!this.isDrawingEnabled) {
       this.map.addControl(this.drawControl);
       this.isDrawingEnabled = true;
+
       const drawPolygonButton = document.querySelector(
         '.leaflet-draw-draw-polygon'
       );
@@ -456,37 +552,93 @@ export class ServicesComponent implements OnInit {
       next: (data) => {
         this.services = data;
         this.filteredServices = data;
+        this.cdr.detectChanges();
       },
-      error: (error) =>
-        console.error('There was an error fetching services!', error),
+      error: (error) => {
+        console.error('There was an error fetching services!', error);
+        this.cdr.detectChanges();
+      },
     });
   }
 
   onAccordionItemOpen(index: number): void {
     if (!this.selectedService) {
-      this.showWarningDialog();
+      // this.showWarningDialog();
     }
   }
-
-  showWarningDialog(): void {
-    this.dialogs
-      .open(
-        '<div><strong>Внимание:</strong> Не закончено заполнение услуги.</div>',
-        { label: 'Предупреждение', size: 'm' }
-      )
-      .subscribe();
+  private reorderParameters() {
+    if (this.parameters) {
+      const geometryParams = this.parameters.filter(
+        (param) => param.parametersType === 'GEOMETRY'
+      );
+      const otherParams = this.parameters.filter(
+        (param) => param.parametersType !== 'GEOMETRY'
+      );
+      this.parameters = [...geometryParams, ...otherParams];
+    }
   }
-
   fetchParameters(serviceUuid: string): void {
     const url = `/api/service/parameters?uuid=${serviceUuid}`;
-    this.http.get<{ parameter: any }>(url).subscribe({
+    this.http.get<{ parameters: any }>(url).subscribe({
       next: (data) => {
-        if (data && data.parameter) {
-          this.parameters = [data.parameter]; // Convert the single parameter object into an array
-          this.filteredParameters = this.parameters;
-          this.selectedParameter = this.parameters[0];
-          this.onParameterChange(this.selectedParameter);
-          this.updateRangeSlider(this.selectedParameter);
+        if (data) {
+          this.parameters = data.parameters.map((param: Parameter) => {
+            if (param.parametersType === 'CHECKBOX') {
+              param.values = param.restrictions.defaultValue === true;
+            } else if (param.parametersType === 'COUNT') {
+              param.control = new FormControl(param.restrictions.defaultValue);
+            } else if (param.parametersType === 'COMBOBOX') {
+              // Если defaultValue — массив, возьмём первый элемент как дефолт (или пустую строку)
+              const defaultVal =
+                Array.isArray(param.restrictions.defaultValue) &&
+                param.restrictions.defaultValue.length
+                  ? param.restrictions.defaultValue[0]
+                  : '';
+              param.control = new FormControl(defaultVal);
+            } else if (param.parametersType === 'STRING') {
+              // Если это строковый параметр, можем взять defaultValue целиком, если он есть
+              param.control = new FormControl(
+                param.restrictions.defaultValue || ''
+              );
+            } else if (param.parametersType === 'GEOMETRY') {
+              this.hasTerritoryParameter = true;
+              if (param.restrictions.mustBeInside === true)
+                this.hasTerritoryParameterInside = true;
+              else this.hasTerritoryParameterInside = false;
+            }
+            return param;
+          });
+
+          this.reorderParameters();
+
+          // this.parameters = data.parameters;
+
+          // this.hasHeightParameter = this.parameters.some(
+          //   (param) => param.title === 'Высота'
+          // );
+
+          // this.hasTerritoryParameter = this.parameters.some(
+          //   (param) => param.title === 'Територия'
+          // );
+          // if (this.hasTerritoryParameter) {
+          //   this.toggleRestrictionPolygons(true);
+          //   this.drawServicePolygons();
+          // } else {
+          //   this.toggleRestrictionPolygons(false);
+          // }
+
+          // const countParameter = this.parameters.find(
+          //   (param) => param.title === 'Количество точек'
+          // );
+          // this.hasCountParameter = !!countParameter;
+          // if (this.hasCountParameter && countParameter) {
+          //   // Update slider based on parameter restrictions
+          //   const restrictions = countParameter.restrictions;
+          //   this.min = restrictions.min || 0;
+          //   this.max = restrictions.max || 100;
+          //   this.steps = (this.max - this.min) / this.sliderStep;
+          //   this.control.setValue(this.min);
+          // }
         }
       },
       error: (error) => {
@@ -495,14 +647,14 @@ export class ServicesComponent implements OnInit {
     });
   }
 
-  updateRangeSlider(parameter: Parameter): void {
-    if (parameter.parametersType === 'COUNT') {
-      this.min = parameter.restrictions.min;
-      this.max = parameter.restrictions.max;
-      this.steps = (this.max - this.min) / this.sliderStep;
-      this.control.setValue([this.min, this.max]);
-    }
-  }
+  // updateRangeSlider(parameter: Parameter): void {
+  //   if (parameter.parametersType === 'COUNT') {
+  //     this.min = parameter.restrictions.min;
+  //     this.max = parameter.restrictions.max;
+  //     this.steps = (this.max - this.min) / this.sliderStep;
+  //     this.control.setValue([this.min, this.max]);
+  //   }
+  // }
 
   onServiceChange(service: Service): void {
     this.selectedService = service;
@@ -510,11 +662,12 @@ export class ServicesComponent implements OnInit {
     this.selectedParameter = null;
     this.resetDrawingState();
 
-    // Update accordion states
-    this.openServiceAccordion = false;
-    this.openParametersAccordion = !!service; // Open if service is selected
-    this.openCalculationAccordion = false;
-    this.openCheckoutAccordion = false;
+    if (service) {
+      this.openParametersAccordion = true; // Open Parameters Accordion
+      this.openCalculationAccordion = false;
+      this.openCheckoutAccordion = false;
+      this.cdr.detectChanges();
+    }
 
     // Remove existing polygons and legend when service changes
     this.toggleRestrictionPolygons(false);
@@ -682,13 +835,13 @@ export class ServicesComponent implements OnInit {
     if (this.legendControl) {
       this.map.removeControl(this.legendControl);
     }
-  
+
     if (!this.selectedService) {
       return;
     }
-  
+
     this.legendControl = new L.Control({ position: 'bottomleft' });
-  
+
     this.legendControl.onAdd = (map) => {
       const div = L.DomUtil.create('div', 'info legend');
       div.innerHTML = `
@@ -728,9 +881,9 @@ export class ServicesComponent implements OnInit {
       `;
       return div;
     };
-  
+
     this.legendControl.addTo(this.map);
-  }  
+  }
 
   toggleRestrictionPolygons(show: boolean): void {
     if (show && this.selectedService) {
@@ -739,23 +892,6 @@ export class ServicesComponent implements OnInit {
       this.restrictionPolygons.forEach((polygon) =>
         this.map.removeLayer(polygon)
       );
-    }
-  }
-
-  onParameterChange(parameter: Parameter): void {
-    this.selectedParameter = parameter;
-    this.clearPolygons();
-
-    if (parameter.restrictions.mustBeInside) {
-      // Если полигоны еще не загружены, загрузить их
-      if (this.restrictionPolygons.length === 0) {
-        this.fetchRestrictionPolygons();
-      }
-
-      this.toggleRestrictionPolygons(true);
-    } else {
-      this.toggleRestrictionPolygons(false);
-      this.drawServicePolygons();
     }
   }
 
@@ -884,4 +1020,347 @@ export class ServicesComponent implements OnInit {
       }
     }, 1200);
   }
+
+  onConfirmCost(): void {
+    if (this.isConfirmDisabled) {
+      // Do nothing or show a warning
+      return;
+    }
+
+    if (!this.selectedService) {
+      return;
+    }
+
+    // Construct the request payload
+    const payload: any = {
+      service: this.selectedService.uuid,
+      parameters: [],
+    };
+
+    this.parameters.forEach((param) => {
+      const parameterData: any = {
+        title: param.title,
+      };
+
+      if (param.parametersType === 'GEOMETRY') {
+        // Include the polygon points
+        const polygons = this.drawnLayers.getLayers();
+
+        if (polygons.length > 0) {
+          const polygon = polygons[0] as L.Polygon;
+          const latLngs = polygon.getLatLngs() as L.LatLng[][];
+          const points = latLngs[0].map((latlng) => ({
+            x: latlng.lng,
+            y: latlng.lat,
+          }));
+
+          parameterData.value =
+            '[' + points.map((obj) => `${obj.x}, ${obj.y}`).join('; ') + ']';
+        } else {
+          // Handle case where no polygon is drawn
+          console.warn('No polygon drawn for GEOMETRY parameter');
+        }
+      } else if (
+        param.parametersType === 'CHECKBOX' ||
+        param.parametersType === 'STRING'
+      ) {
+        // Include the value from the toggle
+        parameterData.value = param.values.toString();
+      } else if (
+        param.parametersType === 'COUNT' ||
+        param.parametersType === 'COMBOBOX'
+      ) {
+        // Include the selected value from the slider
+        parameterData.value = param.control.value
+          ? param.control.value.toString()
+          : '';
+      }
+
+      payload.parameters.push(parameterData);
+    });
+
+    // Proceed to make the POST request
+    this.calculateCost(payload);
+  }
+
+  cost: number | null = null;
+  days: number | null = null;
+  currentDate: Date = new Date();
+  futureDate: Date = new Date();
+
+  comment: string | null = null;
+
+  calculateCost(payload: any): void {
+    const url = `/api/service/cost_service?uuid=${payload.service}`;
+    this.http.post(url, payload.parameters).subscribe({
+      next: (response: any) => {
+        // Handle the response, e.g., display cost and time
+        this.cost = response.cost;
+        this.days = response.days;
+
+        // Compute future date
+        this.futureDate = new Date();
+        if (this.days !== null) {
+          this.futureDate.setDate(this.currentDate.getDate() + this.days);
+        }
+        // Open the "Расчет" accordion item
+        this.openCalculationAccordion = true;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error calculating cost:', error);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  showLoginModal: boolean = false;
+
+  openLoginModal(): void {
+    this.showLoginModal = true;
+  }
+
+  onLoginSuccess(): void {
+    this.showLoginModal = false;
+    this.addServiceToCart();
+  }
+
+  onConfirmService(): void {
+    // if (!this.selectedService) {
+    //   return;
+    // }
+
+    // Check if the user is logged in
+    if (!this.storageService.isLoggedIn()) {
+      // User is not logged in, show notification
+      this.showLoginNotification();
+    } else {
+      // User is logged in, proceed to add service
+      this.addServiceToCart();
+    }
+  }
+
+  addServiceToCart(): void {
+    console.log(this.uploadedFiles.values());
+    const payload: any = {
+      service: this.selectedService?.uuid,
+      parameters: [],
+      files: Array.from(this.uploadedFiles.values())
+        .map(({ src }) => {
+          const fileNameMatch = src?.match(/fileName=([^&]*)/);
+          return fileNameMatch?.[1] ?? null;
+        })
+        .filter(Boolean),
+      comment: this.comment,
+    };
+
+    this.parameters.forEach((param) => {
+      const parameterData: any = {
+        title: param.title,
+      };
+
+      if (param.parametersType === 'GEOMETRY') {
+        // Include the polygon points
+        const polygons = this.drawnLayers.getLayers();
+
+        if (polygons.length > 0) {
+          const polygon = polygons[0] as L.Polygon;
+          const latLngs = polygon.getLatLngs() as L.LatLng[][];
+          const points = latLngs[0].map((latlng) => ({
+            x: latlng.lng,
+            y: latlng.lat,
+          }));
+
+          parameterData.value =
+            '[' + points.map((obj) => `${obj.x}, ${obj.y}`).join('; ') + ']';
+        } else {
+          // Handle case where no polygon is drawn
+          console.warn('No polygon drawn for GEOMETRY parameter');
+        }
+      } else if (param.parametersType === 'CHECKBOX') {
+        // Include the value from the toggle
+        parameterData.value = param.values.toString();
+      } else if (param.parametersType === 'COUNT') {
+        // Include the selected value from the slider
+        parameterData.value = param.control.value
+          ? param.control.value.toString()
+          : '';
+      }
+
+      payload.parameters.push(parameterData);
+    });
+
+    // Proceed to make the POST request
+    const url = `/api/basket/add_service?service_uuid=${payload.service}`;
+    this.http
+      .post(
+        url,
+        {
+          parameters: payload.parameters,
+          files: payload.files,
+          comment: payload.comment,
+        },
+        { responseType: 'text' }
+      )
+      .subscribe({
+        next: (response: any) => {
+          // Show success notification
+          this.showSuccessNotification();
+        },
+        error: (error) => {
+          console.error('Error adding service to basket:', error);
+          this.alertService
+            .open('Ошибка при добавлении в корзину', {
+              status: 'error',
+            })
+            .subscribe();
+        },
+      });
+  }
+
+  // services.component.ts
+  showLoginNotification(): void {
+    this.dialogService
+      .open<string>(this.contentAuth, {
+        size: 's',
+        closeable: false,
+        dismissible: false,
+      })
+      .subscribe((result) => {
+        if (result === 'login') {
+          this.openLoginModal();
+        }
+      });
+  }
+
+  showSuccessNotification(): void {
+    this.dialogService
+      .open<string>(this.contentSuccess, {
+        size: 's',
+        closeable: false,
+        dismissible: false,
+      })
+      .subscribe((result) => {
+        if (result === 'goToBasket') {
+          this.router.navigate(['/basket'], { replaceUrl: true }).then(() => {
+            window.location.reload();
+          });
+        }
+      });
+  }
+
+  goToBasket(): void {
+    this.router.navigate(['/basket'], { replaceUrl: true }).then(() => {
+      window.location.reload();
+    });
+  }
+
+  readonly controlFile = new FormControl([], [maxFilesLength(5)]);
+  rejectedFiles = new BehaviorSubject<TuiFileLike[]>([]);
+  loadingFiles = new BehaviorSubject<TuiFileLike[]>([]);
+  uploadedFiles: Set<any> = new Set();
+
+  loadedFiles$ = combineLatest([
+    this.controlFile.valueChanges,
+    this.rejectedFiles,
+  ]).pipe(
+    map(([files, rejected]) => {
+      if (!files || !Array.isArray(files)) {
+        return [];
+      }
+      return files.filter((file) => !rejected.some((r) => r === file)); // Фильтрация отклоненных файлов
+    }),
+    switchMap((files) => {
+      if (files.length > 0) {
+        const requests = files.map((file) =>
+          this.makeRequest(file as TuiFileLike)
+        );
+        return forkJoin(requests).pipe(
+          map((responses) => responses.filter((file) => file !== null))
+        );
+      }
+      return of([]);
+    }),
+    map((files) => files as TuiFileLike[])
+  );
+
+  onReject(files: TuiFileLike | readonly TuiFileLike[]): void {
+    const filesArray = Array.isArray(files) ? files : [files];
+
+    // Синхронизация controlFile и rejectedFiles
+    const currentFiles = this.controlFile.value || [];
+    this.controlFile.setValue(
+      currentFiles.filter((f) => !filesArray.some((rejected) => rejected === f))
+    );
+    this.rejectedFiles.next([...this.rejectedFiles.getValue(), ...filesArray]);
+  }
+
+  removeFile(file: TuiFileLike): void {
+    this.updateFiles(file);
+  }
+
+  clearRejected(file: TuiFileLike): void {
+    this.updateFiles(file);
+  }
+
+  private updateFiles(file: TuiFileLike): void {
+    const currentFiles = this.controlFile.value || [];
+    this.controlFile.setValue(currentFiles.filter((f) => f !== file));
+    this.rejectedFiles.next(
+      this.rejectedFiles.getValue().filter((rejected) => rejected !== file)
+    );
+    this.uploadedFiles.forEach((uploadedFile) => {
+      if (uploadedFile.file === file) {
+        this.uploadedFiles.delete(uploadedFile);
+      }
+    });
+  }
+
+  makeRequest(file: TuiFileLike): Observable<TuiFileLike | null> {
+    if (Array.from(this.uploadedFiles).some((item) => item.file === file)) {
+      return of(file);
+    }
+
+    this.loadingFiles.next([...this.loadingFiles.getValue(), file]);
+
+    const formData = new FormData();
+    formData.append('file', file as unknown as File, file.name);
+
+    return this.http
+      .post('/api/file/upload', formData, { responseType: 'text' })
+      .pipe(
+        tap({
+          error: () => this.onReject(file), // Обработка ошибок через tap
+        }),
+        map((response) => {
+          if (
+            typeof response === 'string' &&
+            response.includes('File uploaded')
+          ) {
+            const fileName = response.split(':')[1].trim();
+            const src = `/api/file/download_temporaryBucket?fileName=${fileName}`;
+            this.uploadedFiles.add({ file, src });
+            return file;
+          }
+          this.onReject(file);
+          return null;
+        }),
+        finalize(() => {
+          this.loadingFiles.next(
+            this.loadingFiles.getValue().filter((f) => f !== file)
+          );
+        })
+      );
+  }
+}
+
+export function maxFilesLength(maxLength: number): ValidatorFn {
+  return ({ value }: AbstractControl) =>
+    value.length > maxLength
+      ? {
+          maxLength: new TuiValidationError(
+            'Ошибка: максимальный лимит - 5 файлов для загрузки'
+          ),
+        }
+      : null;
 }

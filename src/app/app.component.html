@@ -8,24 +8,15 @@
         <tui-tabs class="menu1" [(activeItemIndex)]="index1">
           <!-- <a tuiTab routerLink="/home" routerLinkActive="active">Главная</a> -->
           <a tuiTab routerLink="/home" routerLinkActive="active">Главная</a>
-          <a tuiTab routerLink="/products" routerLinkActive="active"
-            >Продукты</a
-          >
-          <a tuiTab routerLink="/contacts" routerLinkActive="active"
-            >Контакты</a
-          >
+          <a tuiTab routerLink="/products" routerLinkActive="active">Продукты</a>
+          <a tuiTab routerLink="/contacts" routerLinkActive="active">Контакты</a>
         </tui-tabs>
       </div>
       <div class="right-section">
         <!-- Строка поиска -->
         <form class="b-form" [formGroup]="searchForm">
-          <tui-input
-            tuiTextfield
-            tuiTextfieldIconLeft="tuiIconSearch"
-            tuiTextfieldSize="s"
-            [tuiTextfieldCleaner]="true"
-            formControlName="searchValue"
-          >
+          <tui-input tuiTextfield tuiTextfieldIconLeft="tuiIconSearch" tuiTextfieldSize="s" [tuiTextfieldCleaner]="true"
+            formControlName="searchValue">
             <input type="text" tuiTextfield placeholder="Поиск..." />
             Поиск
           </tui-input>
@@ -33,21 +24,13 @@
 
         <div class="icons-container" *ngIf="!isLoggedIn">
           <tui-tabs class="menu2" [(activeItemIndex)]="index2">
-            <a
-              tuiTab
-              routerLinkActive="active"
-              (mouseenter)="toggleDropdown(true)"
-              (mouseleave)="toggleDropdown(false)"
-            >
+            <a tuiTab routerLinkActive="active" (mouseenter)="toggleDropdown(true)"
+              (mouseleave)="toggleDropdown(false)">
               <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
             </a>
           </tui-tabs>
-          <div
-            class="user-menu"
-            (mouseenter)="toggleDropdown(true)"
-            (mouseleave)="toggleDropdown(false)"
-          >
-            
+          <div class="user-menu" (mouseenter)="toggleDropdown(true)" (mouseleave)="toggleDropdown(false)">
+
             <!-- Dropdown Menu -->
             <div class="dropdown-menu" *ngIf="dropdownOpen">
               <tui-data-list size="s">
@@ -65,41 +48,29 @@
         <div class="icons-container" *ngIf="isLoggedIn">
           <!-- Shopping Cart Icon -->
           <tui-tabs class="menu2" [(activeItemIndex)]="index2">
-            <a tuiTab routerLink="/cart" routerLinkActive="active">
-              <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
+            <a tuiTab routerLink="/basket" routerLinkActive="active">
+              <tui-badged-content *ngIf="basketItemCount" style="padding-right: 5px;" [size]="'xs'"
+                [contentTop]="basketItemCount" [colorTop]="'#FF7043'">
+                <tui-svg src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
+              </tui-badged-content>
+              <tui-svg *ngIf="!basketItemCount" src="tuiIconShoppingCart" class="icon-profile"></tui-svg>
             </a>
 
             <!-- Bell Icon -->
-            <a
-              tuiTab
-              routerLink="/personal-cabinet/notifications"
-              routerLinkActive="active"
-            >
+            <a tuiTab routerLink="/personal-cabinet/notifications" routerLinkActive="active">
               <tui-svg src="tuiIconBell" class="icon-profile"></tui-svg>
             </a>
-            <a
-              tuiTab
-              routerLinkActive="active"
-              (mouseenter)="toggleDropdown(true)"
-              (mouseleave)="toggleDropdown(false)"
-            >
+            <a tuiTab routerLinkActive="active" (mouseenter)="toggleDropdown(true)"
+              (mouseleave)="toggleDropdown(false)">
               <tui-svg src="tuiIconUser" class="icon-profile"></tui-svg>
             </a>
           </tui-tabs>
           <!-- User Menu -->
-          <div
-            class="user-menu"
-            (mouseenter)="toggleDropdown(true)"
-            (mouseleave)="toggleDropdown(false)"
-          >
+          <div class="user-menu" (mouseenter)="toggleDropdown(true)" (mouseleave)="toggleDropdown(false)">
             <!-- Dropdown Menu -->
             <div class="dropdown-menu" *ngIf="dropdownOpen">
               <tui-data-list size="s">
-                <button
-                  appearance="mono"
-                  routerLink="/personal-cabinet"
-                  tuiOption
-                >
+                <button appearance="mono" routerLink="/personal-cabinet" tuiOption>
                   <tui-svg src="tuiIconHome"></tui-svg> Личный кабинет
                 </button>
                 <button appearance="mono" (click)="logout()" tuiOption>
@@ -115,7 +86,7 @@
     <!-- Sidebar -->
     <div *ngIf="!isHomeRoute" class="content">
       <app-sidebar></app-sidebar>
-      <router-outlet></router-outlet>
+      <!-- <router-outlet></router-outlet> -->
     </div>
 
     <div *ngIf="isHomeRoute" class="home">

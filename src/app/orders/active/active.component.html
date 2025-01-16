@@ -5,10 +5,12 @@
       formControlName="selectedServices"
       class="b-form"
       [tuiTextfieldLabelOutside]="true"
+      [tuiTextfieldCleaner]="true"
     >
       Услуги
       <tui-data-list-wrapper
         *tuiDataList
+        tuiMultiSelectGroup
         [items]="filterServices(serviceSearch)"
       ></tui-data-list-wrapper>
     </tui-multi-select>
@@ -111,7 +113,7 @@
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
-            <div>{{ getServiceTitles(order.service ?? []) }}</div>
+          <div [innerHTML]="getServiceTitles(order.service ?? [])"></div>
           </td>
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
@@ -179,5 +181,5 @@
 </div>
 
 <ng-template #noOrders>
-  <div class="tui-text_body-m">Записей с заказами не найдено</div>
+  <div class="tui-text_body-m" style="margin-top:2rem; text-align: center;">Записей с заказами не найдено</div>
 </ng-template>

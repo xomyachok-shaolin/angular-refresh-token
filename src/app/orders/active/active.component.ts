@@ -40,6 +40,7 @@ import {
   TuiPromptData,
   tuiItemsHandlersProvider,
 } from '@taiga-ui/kit';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-active',
@@ -109,7 +110,8 @@ export class ActiveComponent implements OnInit {
     private cdRef: ChangeDetectorRef,
     private ngZone: NgZone,
     private dialogService: TuiDialogService,
-    private alertService: TuiAlertService
+    private alertService: TuiAlertService,
+    private sanitizer: DomSanitizer,
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -245,7 +247,7 @@ export class ActiveComponent implements OnInit {
 
   getItemHeight(): number {
     const rowElement =
-      this.tableContainer.nativeElement.querySelector('.tui-table__tr');
+      this.tableContainer?.nativeElement.querySelector('.tui-table__tr');
     return rowElement ? rowElement.clientHeight : 0;
   }
 
@@ -411,11 +413,13 @@ export class ActiveComponent implements OnInit {
     }
   }
 
-  getServiceTitles(services: Service[]): string {
+  getServiceTitles(services: Service[]): SafeHtml {
     if (!services || services.length === 0) {
-      return 'No Services';
+      return this.sanitizer.bypassSecurityTrustHtml('No Services');
     }
-    return services.map((service) => service.title).join(' ');
+    return this.sanitizer.bypassSecurityTrustHtml(
+      services.map((service) => service.title).join('<br>')
+    );
   }
 
   get anySelected(): boolean {

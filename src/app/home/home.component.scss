@@ -6,9 +6,12 @@
     background:#f7f7f7;
   }
 
+
+
   .card {
     width: 450px;
     margin: 19px;
+    padding: 19px;
     text-align: center;
     filter: drop-shadow(0px 4px 24px rgba(0, 0, 0, 0.12));
   }
@@ -29,4 +32,5 @@
   
   button {
     width: 100%;
+    padding: 0px;
   }

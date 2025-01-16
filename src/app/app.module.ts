@@ -78,6 +78,8 @@ import {
   TuiDropdownMobileModule,
   TuiTabBarModule,
 } from '@taiga-ui/addon-mobile';
+import { TuiSurfaceModule } from '@taiga-ui/experimental';
+import { TuiMoneyModule } from '@taiga-ui/addon-commerce';
 import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
 import { OrdersComponent } from './orders/orders.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
@@ -88,7 +90,11 @@ import { ActiveComponent } from './orders/active/active.component';
 import { ArchivedComponent } from './orders/archived/archived.component';
 import { OrderService } from './_services/order.service';
 import { TuiTableFiltersModule, TuiTableModule } from '@taiga-ui/addon-table';
-import { TuiDropdownHostModule, TuiOverscrollModule, TuiScrollControlsModule } from '@taiga-ui/cdk';
+import {
+  TuiDropdownHostModule,
+  TuiOverscrollModule,
+  TuiScrollControlsModule,
+} from '@taiga-ui/cdk';
 import { ServicesComponent } from './services/services.component';
 import { CommonModule } from '@angular/common';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
@@ -131,17 +137,19 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
     TuiCheckboxLabeledModule,
     TuiNotificationModule,
     TuiPaginationModule,
+    TuiSurfaceModule,
     TuiHighlightModule,
     TuiStepperModule,
     TuiSvgModule,
     TuiLinkModule,
+    TuiMoneyModule,
     TuiModeModule,
     TuiInputFilesModule,
     TuiScrollbarModule,
-		TuiScrollIntoViewModule,
-		TuiScrollControlsModule,
+    TuiScrollIntoViewModule,
+    TuiScrollControlsModule,
     TuiFieldErrorPipeModule,
-		TuiOverscrollModule,
+    TuiOverscrollModule,
     ScrollingModule,
     TuiTableModule,
     TuiSvgDefsHostModule,

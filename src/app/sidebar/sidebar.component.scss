@@ -9,26 +9,26 @@
 
 
 .sidebar {
+
   width: 200px;
-  padding-top: 22px;
-  padding-left: 16px;
+  padding-top: 1.375rem;
+  padding-left: 1rem;
   background: #F6F6F6;
-  margin-right: 22px;
+  margin-right: 1.375rem;
   transition: transform 0.3s ease, width 0.3s ease;
 }
 
 
 .content {
   border: 1px solid #F6F6F6;
-  border-radius: 16px;
+  border-radius: 1rem;
   background: #FFFFFF;
-  /* Контент займет всё оставшееся пространство */
   flex-grow: 1;
-  margin: 32px;
-  margin-top: 22px;
-  padding: 32px;
-  padding-top: 16px;
-  margin-bottom: 81px;
+  margin: 2rem;
+  margin-top: 1.375rem;
+  padding: 2rem;
+  padding-top: 1rem;
+  margin-bottom: 5.0625rem;
 }
 
 
@@ -75,30 +75,51 @@ tui-tabs {
   }
 
   .custom-header, .content {
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-left: 0.625rem;
+    margin-right: 0.625rem;
   }
 
   .logo-img {
-    width: 100px; /* Smaller logo on smaller screens */
-    height: 48px;
+    width: 100px; 
+    height: 4.5rem;
   }
 
   tui-input {
-    width: 100%; /* Full width on small screens */
+    width: 100%;
   }
 
   .right-section {
-    flex-direction: column; /* Stack elements vertically */
-    gap: 10px;
+    flex-direction: column;
+    gap: 0.625rem;
   }
 
   .main {
-    flex-direction: column; /* Stack sidebar and content vertically */
+    flex-direction: column; 
   }
 
   button {
-    width: 100%; /* Full width buttons in sidebar */
-    min-width: 150px;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+    // transform: translateX(-100%);
+  }
+
+  .sidebar.show {
+    // transform: translateX(0);
+  }
+
+  .content {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  button {
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
   }
 }

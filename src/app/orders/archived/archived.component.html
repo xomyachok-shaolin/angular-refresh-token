@@ -9,6 +9,7 @@
     Услуги
     <tui-data-list-wrapper
       *tuiDataList
+      tuiMultiSelectGroup
       [items]="filterServices(serviceSearch)"
     ></tui-data-list-wrapper>
   </tui-multi-select>
@@ -70,7 +71,7 @@
 <div class="table-container" *ngIf="hasOrders; else noOrders" #tableContainer>
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
     <form [formGroup]="form"></form>
-    <table tuiTable class="table" [columns]="columns">
+    <table size="l" tuiTable class="table" [columns]="columns">
       <thead>
         <tr tuiThGroup>
           <th tuiTh>
@@ -108,8 +109,8 @@
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
-            <div>{{ getServiceTitles(order.service ?? []) }}</div>
-          </td>
+          <div [innerHTML]="getServiceTitles(order.service ?? [])"></div>
+        </td>
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
@@ -176,5 +177,5 @@
 </div>
 
 <ng-template #noOrders>
-  <div class="tui-text_body-s">Записей с архивными заказами не найдено</div>
+  <div class="tui-text_body-m" style="margin-top:2rem; text-align: center;">Записей с архивными заказами не найдено</div>
 </ng-template>

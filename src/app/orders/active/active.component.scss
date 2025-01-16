@@ -105,8 +105,8 @@ tui-dropdown {
 }
 
   .table-container {
-    max-height: calc(85vh - 200px); /* Вычтите суммарную высоту заголовка, вкладок, фильтров и других элементов */
-    overflow-y: auto;
+    max-height: calc(85vh - 200px); 
+    // overflow-y: auto;
   }
 
   .bulk-actions-footer {

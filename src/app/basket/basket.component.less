@@ -1,148 +1,154 @@
-tui-pagination {
-    margin-top: 16px;
-    display: flex;
+body {
+  font: var(--tui-font-text-m) !important;
 }
 
-.table {
-    width: 100%;
+tui-stepper {
+  font: var(--tui-font-text-m);
+  justify-content: center;
+  padding-top: 1rem;
+}
+.basket-container {
+  padding: 1rem;
+  width: 100%;
+  // max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr; 
+  grid-gap: 1rem; 
+  font: var(--tui-font-text-m);
 }
 
-td {
-    border-bottom: 1px solid #e0e0e0;
-    &:last-child {
-            padding-right: 5px;
-        }
-}
-
-th {
-    white-space: nowrap;
-    border-color: transparent;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 1rem;
-}
-
-.menu {
-    width: 12.5rem;
-}
-
-.completed,
-.denied,
-.processing,
 .basket {
-    display: flex;
-    align-items: center;
- 
-    &:before {
-        content: '';
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 100%;
-        margin-right: 0.5rem;
-        background: #F45725;
-    }
-}
- 
-.completed:before {
-    background: var(--tui-success-fill);
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 2rem 1rem;
+  max-height: 60vh;
 }
 
-.processing:before {
-    background: #70B6F6;
+.basket-header-row,
+.basket-header {
+  display: grid;
+  grid-template-columns: 5% auto 15% 5%;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.5rem 4rem 1rem 0.9rem;
 }
 
-.basket:before {
-    background: #fddf34;
+.basket-header-row {
+  // font: var(--tui-font-text-m);
+  font-weight: bold;
+  color: var(--tui-text-02);
+  border-bottom: 1px solid #ccc;
+  padding-inline: 2.2rem 8rem;
 }
 
-.filters {
-    width: auto;
-    margin-top: 24px;
-    margin-bottom: 12px;
-  }
-  
-  .filter-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px; /* Промежуток между фильтрами */
-  }
-  
-  .b-form {
-    flex: 1; /* Каждый элемент фильтра будет равномерно занимать пространство */
-  }
-  
-  .search-container {
-    display: flex;
-    flex-grow: 1;
-    justify-content: flex-end;
-  }
-  
-  .search-input {
-    width: 100%;
-    max-width: 250px;
-  }
-  
+// .basket-header {
+//   border-bottom: 1px solid #eee;
+//   padding-inline: 2rem 5rem;
+// }
 
-/* Style adjustments for smaller screens */
+.basket-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.basket-price {
+  // white-space: nowrap; /* Предотвращаем перенос цены на новую строку */
+}
+
+.basket-content {
+  /* Включаем grid-сетку: три колонки */
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr; /* или 2fr 3fr 2fr — на ваше усмотрение */
+  gap: 2rem;
+  padding: 1rem;
+  /* Чтобы длинные слова переносились */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.basket-description,
+.basket-details,
+.basket-files {
+  min-width: 0; /* Позволяет колонкам сжиматься при длинном тексте */
+}
+
+/* В каждом блоке делаем перенос текста */
+.basket-description-block,
+.basket-params {
+  margin-bottom: 1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Можно чуть оформить заголовок "Файлы" */
+.basket-files > strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Списку файлов даём отступы и перенос */
+.basket-file-list {
+  display: flex;
+  flex-wrap: wrap; /* Позволяет переносить элементы на новую строку */
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+/* Самим файлам тоже не даём «выталкивать» верстку */
+.basket-files tui-file {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Адаптив для мобильных устройств — 
+   переходим в «стек» (вертикальный) при ширине экрана <768px */
 @media (max-width: 768px) {
-    .filter-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .search-section {
-        order: -1; /* Move search to the top */
-        margin-bottom: 10px;
-    }
-}
-
-.secondary-text {
-    color: #1B1F3BA6;
-}
-
-tui-dropdown {
-    display: table !important;
-}
-
-.scrollbar {
-  max-height: calc(85vh - 200px);
-}
-
-  .table-container {
-    max-height: calc(85vh - 200px); /* Вычтите суммарную высоту заголовка, вкладок, фильтров и других элементов */
-    overflow-y: hidden;
-  }
-
-  .bulk-actions-footer {
-    position: fixed;
-    inset-inline-end: 0;
-    bottom: 0px;
-    z-index: 99;
+  .basket-content {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding-inline: 24px;
-    padding-block: 0;
-    box-sizing: border-box;
-    box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px, rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-    line-height: 64px;
-    background-color: rgba(255, 255, 255);
-    border-block-start: 1px solid rgba(5, 5, 5, 0.06);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    color: rgba(0, 0, 0, 0.88);
-    transition: all 0.2s ease 0s;
+    flex-direction: column;
   }
-  
-  .bulk-info {
-    font-size: 16px;
-    color: rgba(0, 0, 0, 0.88);
+}
+
+.select-actions {
+  display: flex; // Включаем Flexbox
+  justify-content: space-between; // Размещаем элементы по краям контейнера
+  align-items: center; // Выравниваем элементы по вертикали по центру (опционально, но рекомендуется)
+  // margin-top: 2rem; // Добавим отступ снизу для красоты
+  // padding-inline: 3rem;
+}
+
+.select-actions a {
+  white-space: nowrap;
+}
+
+.total-amount {
+  // margin-top: 3rem;
+  text-align: right;
+  font-weight: bold;
+  font-size: 17px
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .basket-header-row,
+  .basket-header {
+    grid-template-columns: 1fr; /* Single column layout */
   }
-  
-  .bulk-buttons {
-    margin-left: auto; /* Прижмет кнопки вправо */
-    display: flex;
-    gap: 10px; /* Промежуток между кнопками */
+
+  .basket-content {
+    flex-direction: column; /* Stack content vertically */
   }
-  
+
+  .basket-files {
+    margin-top: 1rem; /* Add space between details and files */
+  }
+}

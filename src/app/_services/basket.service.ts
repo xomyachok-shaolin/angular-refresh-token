@@ -26,6 +26,13 @@ export class BasketService {
     });
   }
 
+  createOrder(orderData: any): Observable<any> {
+    return this.http.post('/api/basket/create_order', orderData, {
+      headers: this.getAuthHeaders(),
+      responseType: 'text',
+    });
+  }
+
   deleteService(uuid: string): Observable<any> {
     const headers = this.getAuthHeaders();
     return this.http.delete(`/api/basket/remove_service`, {

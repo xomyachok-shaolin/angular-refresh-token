@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { TUI_LANGUAGE, TUI_RUSSIAN_LANGUAGE } from '@taiga-ui/i18n';
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import {
   BrowserAnimationsModule,
   provideAnimations,
@@ -27,6 +27,7 @@ import {
   TuiModeModule,
   TuiScrollIntoViewModule,
   TuiErrorModule,
+  TuiGroupModule,
 } from '@taiga-ui/core';
 
 import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
@@ -73,6 +74,12 @@ import {
   TuiStepperModule,
   TuiInputFilesModule,
   TuiFieldErrorPipeModule,
+  TuiRadioBlockModule,
+  TuiRadioModule,
+  TuiTagModule,
+  TuiInputInlineModule,
+  TuiInputPhoneModule,
+  TUI_VALIDATION_ERRORS,
 } from '@taiga-ui/kit';
 import {
   TuiDropdownMobileModule,
@@ -101,6 +108,11 @@ import { ForgotPasswordComponent } from './forgot-password/forgot-password.compo
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { BasketComponent } from './basket/basket.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { ConfigService } from './config.service';
+
+export function initializeApp(configService: ConfigService) {
+  return () => configService.loadConfig();
+}
 
 @NgModule({
   declarations: [
@@ -144,6 +156,11 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
     TuiLinkModule,
     TuiMoneyModule,
     TuiModeModule,
+    TuiInputInlineModule,
+    TuiGroupModule,
+    TuiRadioModule,
+    TuiRadioBlockModule,
+    TuiTagModule,
     TuiInputFilesModule,
     TuiScrollbarModule,
     TuiScrollIntoViewModule,
@@ -172,6 +189,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
     TuiHintModule,
     TuiTabsModule,
     TuiTabBarModule,
+    TuiInputPhoneModule,
     TuiInputPasswordModule,
     TuiInputSliderModule,
     TuiCheckboxModule,
@@ -204,6 +222,25 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
       provide: TUI_LANGUAGE,
       useValue: of(TUI_RUSSIAN_LANGUAGE),
     },
+    {
+      provide: TUI_VALIDATION_ERRORS,
+      useValue: {
+        required: 'Поле обязательно для заполнения',
+        email: 'Введите корректный email',
+        minlength: ({requiredLength}: {requiredLength: number}) =>
+          `Минимальная длина ${requiredLength} символов`,
+        maxlength: ({requiredLength}: {requiredLength: number}) =>
+          `Максимальная длина ${requiredLength} символов`,
+        pattern: 'Неверный формат',
+        min: ({min}: {min: number}) => `Минимальное значение ${min}`,
+      },
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeApp,
+      deps: [ConfigService],
+      multi: true
+    }
   ],
   bootstrap: [AppComponent],
 })

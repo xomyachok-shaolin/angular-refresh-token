@@ -1,19 +1,15 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-import { BasketService } from '../_services/basket.service';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
 import { StorageService } from '../_services/storage.service';
-import {
-  TuiAlertService,
-  TuiDialogService,
-  tuiScrollbarOptionsProvider,
-} from '@taiga-ui/core';
+import { BasketService } from '../_services/basket.service';
+import { Router } from '@angular/router';
+import { switchMap, of } from 'rxjs';
 import { TUI_PROMPT, TuiFileLike, TuiPromptData } from '@taiga-ui/kit';
-import { of, switchMap } from 'rxjs';
+import { ConfigService } from '../config.service';
+
+export type ClientType = 'INDIVIDUAL' | 'ENTERPRISER' | 'LEGAL';
 
 interface BasketItem {
   uuid: string;
@@ -30,38 +26,229 @@ interface BasketItem {
   selector: 'app-basket',
   templateUrl: './basket.component.html',
   styleUrls: ['./basket.component.less'],
-  providers: [
-    tuiScrollbarOptionsProvider({
-      mode: 'hover',
-    }),
-  ],
 })
 export class BasketComponent implements OnInit {
-  open = false;
-  onClick(): void {
-    this.open = !this.open;
-  }
-  readonly columns = ['Название услуги', 'Описание', 'Стоимость'] as const;
-  basketData: BasketItem[] = [];
-  hasBasket: boolean = true;
+  // Степпер: 0 – Корзина, 1 – Оформление заказа, 2 – Подтверждение
+  currentStep = 0;
+  basketData: any[] = [];
+  hasBasket = false;
+  totalAmount = 0;
+
+  // Для каждого типа клиента своя форма
+  individualForm: FormGroup;
+  enterpriserForm: FormGroup;
+  legalForm: FormGroup;
+  // Текущий тип клиента (для переключения)
+  clientType: ClientType = 'INDIVIDUAL';
+
+  isLoading = false;
+  // Сохраняем исходное значение формы для последующего сравнения
+  private originalFormValue: string = '';
+
+
+  // DaData токен
+  private readonly DADATA_API_TOKEN = this.configService.getDadataToken();
+
+  companySuggestions: any[] = [];
+  showCompanySuggestions = false;
+  bankSuggestions: any[] = [];
+  showBankSuggestions = false;
+
+
   allSelected = false;
-  selectedItems: Set<string> = new Set();
-  totalAmount: number = 0;
-  currentStep = 0; // Текущий шаг степпера
 
   @ViewChild('tableContainer') tableContainer!: ElementRef;
 
   constructor(
-    private basketService: BasketService,
+    private fb: FormBuilder,
+    private http: HttpClient,
     private storageService: StorageService,
+    private basketService: BasketService,
     private dialogService: TuiDialogService,
     private alertService: TuiAlertService,
-    private cdRef: ChangeDetectorRef
-  ) {}
+    private configService: ConfigService,
+    private router: Router
+  ) {
+     // Форма для физического лица
+     this.individualForm = this.fb.group({
+      clientType: ['INDIVIDUAL', Validators.required],
+      lastName: ['', Validators.required],
+      firstName: ['', Validators.required],
+      middleName: [''],
+      phone: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(
+            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
+          ),
+        ],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+    });
+
+    // Форма для ИП
+    this.enterpriserForm = this.fb.group({
+      clientType: ['ENTERPRISER', Validators.required],
+      lastName: ['', Validators.required],
+      firstName: ['', Validators.required],
+      middleName: [''],
+      phone: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(
+            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
+          ),
+        ],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+      ogrnip: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(15),
+          Validators.maxLength(15),
+        ],
+      ],
+      inn: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(10),
+          Validators.maxLength(12),
+        ],
+      ],
+      checkingAccount: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(20),
+          Validators.maxLength(20),
+        ],
+      ],
+      registrationAddress: ['', Validators.required],
+    });
+
+    // Форма для юридического лица
+    this.legalForm = this.fb.group({
+      clientType: ['LEGAL', Validators.required],
+      // ФИО руководителя (общие поля)
+      lastName: ['', Validators.required],
+      firstName: ['', Validators.required],
+      middleName: [''],
+      phone: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(
+            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
+          ),
+        ],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+      // Дополнительные поля для юрлица
+      fullNameOrganization: ['', Validators.required],
+      abbreviatedNameOrganization: ['', Validators.required],
+      inn: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(10),
+          Validators.maxLength(12),
+        ],
+      ],
+      kpp: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(9),
+          Validators.maxLength(9),
+        ],
+      ],
+      ogrn: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(13),
+          Validators.maxLength(13),
+        ],
+      ],
+      okpo: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(8),
+          Validators.maxLength(8),
+        ],
+      ],
+      legalAddress: ['', Validators.required],
+      fax: [''],
+      website: [''],
+      checkingAccount: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(20),
+          Validators.maxLength(20),
+        ],
+      ],
+      correspondentAccount: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(20),
+          Validators.maxLength(20),
+        ],
+      ],
+      bic: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(9),
+          Validators.maxLength(9),
+        ],
+      ],
+      bankName: ['', Validators.required],
+    });
+  }
 
   ngOnInit(): void {
     this.loadBasket();
+    this.loadClientDataIntoOrderForm();
+
+// При изменении текущей формы сохраняем её значение в строку для сравнения
+this.getCurrentForm().valueChanges.subscribe(() => {
+  const currentValue = JSON.stringify(this.getCurrentForm().value);
+  if (currentValue === this.originalFormValue) {
+    this.getCurrentForm().markAsPristine();
   }
+});
+  }
+
+    // Метод для выбора текущей формы в зависимости от clientType
+    getCurrentForm(): FormGroup {
+      switch (this.clientType) {
+        case 'INDIVIDUAL':
+          return this.individualForm;
+        case 'ENTERPRISER':
+          return this.enterpriserForm;
+        case 'LEGAL':
+          return this.legalForm;
+        default:
+          return this.individualForm;
+      }
+    }
 
   onCheckboxClick(event: MouseEvent, item: BasketItem): void {
     event.stopPropagation();
@@ -85,14 +272,6 @@ export class BasketComponent implements OnInit {
       item.selected = checked;
     });
     this.calculateTotalAmount();
-  }
-
-  toggleAll(): void {
-    this.allSelected = !this.allSelected;
-    this.basketData = this.basketData.map((item) => ({
-      ...item,
-      selected: this.allSelected,
-    }));
   }
 
   deleteSelected(event?: Event): void {
@@ -146,6 +325,11 @@ export class BasketComponent implements OnInit {
             );
             this.calculateTotalAmount();
             this.allSelected = this.basketData.every((item) => item.selected);
+
+            if (this.basketData.length === 0) {
+              this.currentStep = 0;
+              this.hasBasket = false;
+            }
           }
         },
         error: (error) => {
@@ -157,54 +341,283 @@ export class BasketComponent implements OnInit {
       });
   }
 
+  // Загрузка корзины
   loadBasket(): void {
-    // Get user UUID from StorageService
     const user = this.storageService.getUser();
-    const uuid = user ? user.uuid : null;
-
-    if (uuid) {
-      this.basketService.getBasket().subscribe({
-        next: (data: any) => {
-          if (!data || !data.services || data.services.length === 0) {
-            this.hasBasket = false;
-            this.basketData = [];
-          } else {
-            console.log(data);
-            this.hasBasket = true;
-            this.basketData = data.services.map((service: any) => ({
-              uuid: service.uuid,
-              title: service.title,
-              description: service.description,
-              cost: service.cost,
-              files: service.files,
-              parameters: service.parameters,
-              comment: service.comment,
-              selected: true,
-            }));
-            // this.totalAmount = data.cost;
-          }
-          this.calculateTotalAmount();
-        },
-        error: (error: any) => {
-          console.error('Error while fetching basket:', error);
-          this.hasBasket = false;
-          this.basketData = [];
-          this.cdRef.markForCheck();
-        },
-      });
-    } else {
+    if (!user || !user.uuid) {
       console.error('UUID пользователя не найден.');
       this.hasBasket = false;
+      return;
     }
+    this.basketService.getBasket().subscribe({
+      next: (data: any) => {
+        if (!data || !data.services || data.services.length === 0) {
+          this.hasBasket = false;
+          this.basketData = [];
+        } else {
+          this.hasBasket = true;
+          this.basketData = data.services.map((service: any) => ({
+            uuid: service.uuid,
+            title: service.title,
+            description: service.description,
+            cost: service.cost,
+            selected: true,
+          }));
+          this.calculateTotalAmount();
+        }
+      },
+      error: (err) => {
+        console.error('Ошибка при загрузке корзины:', err);
+      },
+    });
   }
 
-  calculateTotalAmount() {
+  calculateTotalAmount(): void {
     this.totalAmount = this.basketData
-      .filter((item) => item.selected)
+      .filter(item => item.selected)
       .reduce((sum, item) => sum + item.cost, 0);
   }
 
-  // Методы для управления степпером
+  // Загрузка данных клиента из ЛК и подстановка в форму заказа
+  loadClientDataIntoOrderForm(): void {
+    const user = this.storageService.getUser();
+    if (!user || !user.uuid) return;
+    this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe({
+      next: (data) => {
+        if (!data) return;
+        this.clientType = data.clientType || 'INDIVIDUAL';
+        // Заполняем нужную форму
+        if (this.clientType === 'INDIVIDUAL') {
+          this.individualForm.patchValue({
+            clientType: data.clientType || 'INDIVIDUAL',
+            lastName: data.lastName || '',
+            firstName: data.firstName || '',
+            middleName: data.middleName || '',
+            phone: data.phone || '',
+            email: data.email || '',
+          });
+          this.originalFormValue = JSON.stringify(this.individualForm.value);
+          this.individualForm.markAsPristine();
+        } else if (this.clientType === 'ENTERPRISER') {
+          this.enterpriserForm.patchValue({
+            clientType: data.clientType || 'ENTERPRISER',
+            lastName: data.lastName || '',
+            firstName: data.firstName || '',
+            middleName: data.middleName || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            ogrnip: data.ogrnip || data.OGRNIP || '',
+            inn: data.inn || data.INN || '',
+            checkingAccount: data.paymentAccount || '',
+            registrationAddress: data.registrationAddress || '',
+          });
+          this.originalFormValue = JSON.stringify(this.enterpriserForm.value);
+          this.enterpriserForm.markAsPristine();
+        } else if (this.clientType === 'LEGAL') {
+          this.legalForm.patchValue({
+            clientType: data.clientType || 'LEGAL',
+            lastName: data.lastName || '',
+            firstName: data.firstName || '',
+            middleName: data.middleName || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            fullNameOrganization: data.fullNameOrganization || '',
+            abbreviatedNameOrganization: data.abbreviatedNameOrganization || '',
+            inn: data.inn || data.INN || '',
+            kpp: data.kpp || data.KPP || '',
+            ogrn: data.ogrn || data.OGRN || '',
+            okpo: data.okpo || data.OKPO || '',
+            legalAddress: data.legalAddress || '',
+            fax: data.faxNumber || '',
+            website: data.linkToWebsite || '',
+            checkingAccount: data.paymentAccount || '',
+            correspondentAccount: data.correspondentAccount || '',
+            bic: data.BIC || '',
+            bankName: data.bankName || '',
+          });
+          this.originalFormValue = JSON.stringify(this.legalForm.value);
+          this.legalForm.markAsPristine();
+        }
+      },
+      error: err => {
+        console.error('Ошибка загрузки данных клиента:', err);
+      }
+    });
+  }
+
+  // Сохранение обновленных данных клиента из формы заказа
+  updateClientData(): void {
+    const currentForm = this.getCurrentForm();
+    if (currentForm.invalid) {
+     this.alertService
+       .open('Проверьте правильность заполнения полей', {
+         status: TuiNotification.Error,
+       })
+       .subscribe();
+     return;
+   }
+    const user = this.storageService.getUser();
+    if (!user || !user.uuid) return;
+    const body = {
+      uuid: user.uuid,
+      // Остальные поля берутся из текущей формы
+      ...currentForm.value,
+    };
+
+    this.isLoading = true;
+    this.http.put('/api/client/update', body, { responseType: 'text' }).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.alertService
+          .open('Данные клиента обновлены', { status: TuiNotification.Success })
+          .subscribe();
+          this.originalFormValue = JSON.stringify(currentForm.value);
+          currentForm.markAsPristine();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Ошибка обновления клиента:', err);
+        this.alertService
+          .open('Ошибка обновления клиента', { status: TuiNotification.Error })
+          .subscribe();
+      },
+    });
+  }
+
+  // Метод оформления заказа
+  placeOrder(): void {
+
+    const currentForm = this.getCurrentForm();
+    if (currentForm.invalid) {
+     this.alertService
+       .open('Проверьте правильность заполнения полей', {
+         status: TuiNotification.Error,
+       })
+       .subscribe();
+     return;
+   }
+
+    const selectedServices = this.basketData
+      .filter(item => item.selected)
+      .map(item => item.uuid);
+    if (!selectedServices.length) {
+      this.alertService
+        .open('Выберите хотя бы одну услугу', { status: TuiNotification.Warning })
+        .subscribe();
+      return;
+    }
+
+    // Затем создаём заказ (пример запроса)
+    const orderData = {
+      // clientType: this.clientType,
+      ...selectedServices,
+      // можно добавить дублирование клиентских данных
+    };
+    this.basketService.createOrder(selectedServices).subscribe({
+      next: () => {
+        this.alertService
+          .open('Заказ успешно оформлен', { status: TuiNotification.Success })
+          .subscribe();
+        this.currentStep = 2;
+        // Очищаем корзину
+        this.basketData = [];
+        this.totalAmount = 0;
+      },
+      error: (err) => {
+        console.error('Ошибка оформления заказа:', err);
+        this.alertService
+          .open('Ошибка оформления заказа', { status: TuiNotification.Error })
+          .subscribe();
+      },
+    });
+  }
+
+  // Автодополнение DaData для компании (ИНН, наименование)
+  onCompanyNameInput(query: string): void {
+    const type = this.clientType;
+    if ((type !== 'ENTERPRISER' && type !== 'LEGAL') || !query.trim()) {
+      this.showCompanySuggestions = false;
+      this.companySuggestions = [];
+      return;
+    }
+    const url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party';
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: `Token ${this.DADATA_API_TOKEN}`,
+    });
+    const body = { query: query.trim(), count: 5 };
+    this.isLoading = true;
+    this.http.post<any>(url, body, { headers }).subscribe({
+      next: (resp) => {
+        this.isLoading = false;
+        if (resp && resp.suggestions && resp.suggestions.length) {
+          this.companySuggestions = resp.suggestions;
+          this.showCompanySuggestions = true;
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Ошибка DaData party:', err);
+      },
+    });
+  }
+
+  selectCompanySuggestion(sugg: any): void {
+    this.showCompanySuggestions = false;
+    const data = sugg.data;
+    this.getCurrentForm().patchValue({
+      inn: data.inn || '',
+      kpp: data.kpp || '',
+      ogrn: data.ogrn || '',
+      ogrnip: data.ogrn || '',
+      fullNameOrganization: data.name?.full_with_opf || '',
+      abbreviatedNameOrganization: data.name?.short_with_opf || '',
+      legalAddress: data.address?.value || '',
+      registrationAddress: data.address?.value || '',
+      okpo: data.okpo || '',
+    });
+  }
+
+  // Автодополнение DaData для банка
+  onBankInput(query: string): void {
+    const type = this.clientType;
+    if (!query.trim() || type === 'INDIVIDUAL') {
+      this.bankSuggestions = [];
+      this.showBankSuggestions = false;
+      return;
+    }
+    const url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/bank';
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: `Token ${this.DADATA_API_TOKEN}`,
+    });
+    const body = { query: query.trim(), count: 5 };
+    this.isLoading = true;
+    this.http.post<any>(url, body, { headers }).subscribe({
+      next: (resp) => {
+        this.isLoading = false;
+        if (resp && resp.suggestions && resp.suggestions.length) {
+          this.bankSuggestions = resp.suggestions;
+          this.showBankSuggestions = true;
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Ошибка DaData bank:', err);
+      },
+    });
+  }
+
+  selectBankSuggestion(sugg: any): void {
+    this.showBankSuggestions = false;
+    const data = sugg.data;
+    this.getCurrentForm().patchValue({
+      bankName: data.name?.payment || data.name?.full || '',
+      bic: data.bic || '',
+      correspondentAccount: data.correspondent_account || '',
+    });
+  }
+
   nextStep(): void {
     if (this.currentStep < 2) {
       this.currentStep++;
@@ -217,11 +630,8 @@ export class BasketComponent implements OnInit {
     }
   }
 
-  // Метод для оформления заказа
-  placeOrder(): void {
-    // Здесь реализуйте логику оформления заказа
-    // После успешного оформления переходим к следующему шагу
-    this.nextStep();
+  goHome(): void {
+    this.router.navigate(['/']);
   }
 
   deleteService(uuid: string) {
@@ -256,6 +666,11 @@ export class BasketComponent implements OnInit {
           );
           this.calculateTotalAmount();
           this.allSelected = this.basketData.every((item) => item.selected);
+
+          if (this.basketData.length === 0) {
+            this.currentStep = 0;
+            this.hasBasket = false;
+          }        
         },
         error: (error) => {
           console.error('Ошибка при удалении услуги из корзины:', error);
@@ -274,4 +689,5 @@ export class BasketComponent implements OnInit {
         encodeURIComponent(fileName),
     };
   }
+
 }

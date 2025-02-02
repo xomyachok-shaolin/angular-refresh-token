@@ -1,4 +1,3 @@
-<tui-root>
   <div class="col-md-12">
     <div class="card card-container">
       <button *ngIf="isDialog" tuiButton appearance="icon" icon="tuiIconClose" class="close-button"
@@ -48,7 +47,7 @@
           Вход
         </button>
 
-        <button size="l" appearance="secondary" tuiButton routerLink="/register">
+        <button size="l" appearance="secondary" tuiButton type="button" (click)="onRegistrationRequest()">
           Регистрация
         </button>
       </form>
@@ -57,4 +56,3 @@
       {{ errorMessage }}
     </tui-notification>
   </div>
-</tui-root>

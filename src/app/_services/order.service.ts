@@ -132,4 +132,9 @@ export class OrderService {
     });
   }
   
+  getServiceTitles(): Observable<{ uuid: string; title: string }[]> {
+    return this.http.options<{ uuid: string; title: string }[]>(
+      '/api/service/all/titles'
+    );
+  }
 }

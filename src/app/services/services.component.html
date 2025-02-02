@@ -1,44 +1,44 @@
-<tui-root>
-  <div class="custom-header">
-    <div class="left-section">
-      <img src="assets/LogoService.png" class="logo-img" />
-    </div>
-    <div class="right-section">
-      <button size="m" tuiButton (click)="goBack()">Вернуться на портал</button>
-    </div>
+<div class="custom-header">
+  <div class="left-section">
+    <img src="assets/LogoService.png" class="logo-img" />
   </div>
+  <div class="right-section">
+    <button size="m" tuiButton (click)="goBack()">Вернуться на портал</button>
+  </div>
+</div>
 
-  <!-- Main content area -->
-  <div class="content">
-    <div class="main-container">
-      <div class="left-panel">
-        <div class="map-container" style="position: relative">
-          <!-- Leaflet map placeholder -->
-          <div id="map" style="height: 100%; border-radius: 16px"></div>
+<!-- Main content area -->
+<div class="content">
+  <div class="main-container">
+    <div class="left-panel">
+      <div class="map-container" style="position: relative">
+        <!-- Leaflet map placeholder -->
+        <div id="map" style="height: 100%; border-radius: 16px"></div>
 
-          <!-- Loader positioned over the map -->
-          <tui-loader [showLoader]="isLoading" size="xxl" [overlay]="true" class="map-loader"></tui-loader>
+        <!-- Loader positioned over the map -->
+        <tui-loader [showLoader]="isLoading" size="xxl" [overlay]="true" class="map-loader"></tui-loader>
 
-          <!-- Filter Icon Button -->
-          <button *ngIf="selectedService" class="filter-button" tuiIconButton appearance="flat" size="l"
-            icon="tuiIconFilterLarge" (click)="toggleFilter()"></button>
+        <!-- Filter Icon Button -->
+        <button *ngIf="selectedService" class="filter-button" tuiIconButton appearance="flat" size="l"
+          icon="tuiIconFilterLarge" (click)="toggleFilter()"></button>
 
-          <!-- Year Range Slider -->
-          <div class="year-range-slider" *ngIf="showYearRangeSlider && selectedService">
-            <tui-input-range [formControl]="yearRangeControl" [min]="minYear" [max]="maxYear" [steps]="yearSteps"
-              [quantum]="1" [tuiTextfieldSize]="'m'">
-              Выбор периода съемки
-            </tui-input-range>
-            <div class="year-labels">
-              <span>{{ minYear }} год</span>
-              <span>{{ maxYear }} год</span>
-            </div>
+        <!-- Year Range Slider -->
+        <div class="year-range-slider" *ngIf="showYearRangeSlider && selectedService">
+          <tui-input-range [formControl]="yearRangeControl" [min]="minYear" [max]="maxYear" [steps]="yearSteps"
+            [quantum]="1" [tuiTextfieldSize]="'m'">
+            Выбор периода съемки
+          </tui-input-range>
+          <div class="year-labels">
+            <span>{{ minYear }} год</span>
+            <span>{{ maxYear }} год</span>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="right-panel">
-        <tui-accordion>
+    <div class="right-panel">
+      <tui-scrollbar>
+        <tui-accordion [closeOthers]="false">
           <!-- Service selection accordion item -->
           <tui-accordion-item [(open)]="openServiceAccordion">
             <div tuiAccordionItemTitle><strong>Выбор услуги</strong></div>
@@ -61,68 +61,67 @@
 
 
 
+              <tui-loader [showLoader]="isParametersLoading" size="l" [overlay]="true">
 
-              <ng-container *ngFor="let parameter of parameters">
+                <ng-container *ngFor="let parameter of parameters">
 
-                <!-- For GEOMETRY type -->
-                <ng-container *ngIf="parameter.parametersType === 'GEOMETRY'">
-                  <div style="margin-top: 5px;">
-                    <button class="btn-draw" size="m" tuiButton *ngIf="!isDrawingEnabled" [disabled]="!selectedService"
-                      (click)="startDrawing(parameter)">
-                      Нажмите для выбора территории
-                    </button>
-                    <button class="btn-draw" size="m" tuiButton *ngIf="isDrawingEnabled" [disabled]="isConfirmDisabled"
-                      (click)="onConfirmCost()">
-                      Для подтверждения нажмите Enter
-                    </button>
-                  </div>
-                  <div>
-                    <p>Площадь выбранной территории: {{ formattedArea }} га</p>
-                  </div>
+                  <!-- For GEOMETRY type -->
+                  <ng-container *ngIf="parameter.parametersType === 'GEOMETRY'">
+                    <div style="margin-top: 5px;">
+                      <button class="btn-draw" size="m" tuiButton [disabled]="!selectedService"
+                        (click)="isDrawingEnabled ? onConfirmCost() : startDrawing(parameter)">
+                        {{ isDrawingEnabled ? 'Для подтверждения нажмите Enter' : 'Нажмите для выбора территории' }}
+                      </button>
+                    </div>
+                    <div>
+                      <p>Площадь выбранной территории: {{ formattedArea }} га</p>
+                    </div>
+                  </ng-container>
+
+                  <!-- For CHECKBOX type -->
+                  <ng-container *ngIf="parameter.parametersType === 'CHECKBOX'">
+                    <div style="margin-top: 15px;">
+                      <tui-toggle [(ngModel)]="parameter.values" (ngModelChange)="saveDataToLocalStorage()" size="l"
+                        [showIcons]="true" [singleColor]="true">
+                      </tui-toggle>
+                      {{ parameter.title }}
+                    </div>
+                  </ng-container>
+
+                  <!-- COMBOBOX -->
+                  <ng-container *ngIf="parameter.parametersType === 'COMBOBOX'">
+                    <div style="margin-top: 15px;">
+                      <label>{{ parameter.title }}</label>
+                      <tui-select [formControl]="parameter.control">
+                        {{ parameter.description }}
+                        <tui-data-list-wrapper *tuiDataList [items]="parameter.restrictions.defaultValue">
+                        </tui-data-list-wrapper>
+                      </tui-select>
+                    </div>
+                  </ng-container>
+
+                  <!-- STRING -->
+                  <ng-container *ngIf="parameter.parametersType === 'STRING'">
+                    <div style="margin-top: 15px;">
+                      <label>{{ parameter.title }}</label>
+                      <tui-input [formControl]="parameter.control" [tuiTextfieldCleaner]="true">
+                        {{parameter.description}}
+                      </tui-input>
+                    </div>
+                  </ng-container>
+
+                  <!-- For COUNT type -->
+                  <ng-container *ngIf="parameter.parametersType === 'COUNT'">
+                    <div style="margin-top: 15px;">
+                      <label>{{ parameter.title }}</label>
+                      <tui-input-slider [formControl]="parameter.control" [min]="parameter.restrictions.min"
+                        [max]="parameter.restrictions.max" [quantum]="parameter.restrictions.step"
+                        [tuiTextfieldLabelOutside]="true" [tuiTextfieldSize]="'m'"
+                        style="margin: 5px 0 15px;"></tui-input-slider>
+                    </div>
+                  </ng-container>
                 </ng-container>
-
-                <!-- For CHECKBOX type -->
-                <ng-container *ngIf="parameter.parametersType === 'CHECKBOX'">
-                  <div style="margin-top: 15px;">
-                    <tui-toggle [(ngModel)]="parameter.values" size="l" [showIcons]="true" [singleColor]="true">
-                    </tui-toggle>
-                    {{ parameter.title }}
-                  </div>
-                </ng-container>
-
-                <!-- COMBOBOX -->
-                <ng-container *ngIf="parameter.parametersType === 'COMBOBOX'">
-                  <div style="margin-top: 15px;">
-                    <label>{{ parameter.title }}</label>
-                    <tui-select [formControl]="parameter.control">
-                      {{ parameter.description }}
-                      <tui-data-list-wrapper *tuiDataList [items]="parameter.restrictions.defaultValue">
-                      </tui-data-list-wrapper>
-                    </tui-select>
-                  </div>
-                </ng-container>
-
-                <!-- STRING -->
-                <ng-container *ngIf="parameter.parametersType === 'STRING'">
-                  <div style="margin-top: 15px;">
-                    <label>{{ parameter.title }}</label>
-                    <tui-input [formControl]="parameter.control" [tuiTextfieldCleaner]="true">
-                      {{parameter.description}}
-                    </tui-input>
-                  </div>
-                </ng-container>
-
-                <!-- For COUNT type -->
-                <ng-container *ngIf="parameter.parametersType === 'COUNT'">
-                  <div style="margin-top: 15px;">
-                    <label>{{ parameter.title }}</label>
-                    <tui-input-slider [formControl]="parameter.control" [min]="parameter.restrictions.min"
-                      [max]="parameter.restrictions.max" [quantum]="parameter.restrictions.step"
-                      [tuiTextfieldLabelOutside]="true" [tuiTextfieldSize]="'m'"
-                      style="margin: 5px 0 15px;"></tui-input-slider>
-                  </div>
-                </ng-container>
-              </ng-container>
+              </tui-loader>
             </div>
           </tui-accordion-item>
 
@@ -131,13 +130,15 @@
             [disabled]="!selectedService">
             <div tuiAccordionItemTitle><strong>Расчет</strong></div>
             <div tuiAccordionItemContent class="custom-accordion-content">
-              <div *ngIf="cost !== null && days !== null">
-                <p style="margin: 0;">Стоимость: {{ cost | number : "1.2-2" }} ₽</p>
-                <p style="margin:10px 0 0;">
-                  Сроки: {{ currentDate | date : "dd.MM.yyyy" }} -
-                  {{ futureDate | date : "dd.MM.yyyy" }}
-                </p>
-              </div>
+              <tui-loader [showLoader]="isCalculationLoading" size="l" [overlay]="true">
+                <div *ngIf="cost !== null && days !== null">
+                  <p style="margin: 0;">Стоимость: {{ cost | number : "1.2-2" }} ₽</p>
+                  <p style="margin:10px 0 0;">
+                    Сроки: {{ currentDate | date : "dd.MM.yyyy" }} -
+                    {{ futureDate | date : "dd.MM.yyyy" }}
+                  </p>
+                </div>
+              </tui-loader>
             </div>
           </tui-accordion-item>
 
@@ -146,84 +147,103 @@
             [disabled]="!selectedService">
             <div tuiAccordionItemTitle><strong>Оформление</strong></div>
             <div tuiAccordionItemContent class="custom-accordion-content">
+              <tui-loader [showLoader]="isCheckoutLoading" size="l" [overlay]="true">
 
-              <tui-input-files [formControl]="controlFile" [multiple]="true"
-                (ngModelChange)="controlFile.markAsTouched()" (reject)="onReject($event)">
-              </tui-input-files>
+                <tui-input-files [formControl]="controlFile" [multiple]="true"
+                  (ngModelChange)="controlFile.markAsTouched()" (reject)="onReject($event)">
+                </tui-input-files>
 
-              <tui-files class="tui-space_top-1">
-                <tui-file *ngFor="let file of (loadedFiles$ | async) || []" [file]="file"
-                [showDelete]="controlFile.enabled" (removed)="removeFile(file)">
-                </tui-file>
+                <tui-files class="tui-space_top-1">
+                  <tui-file *ngFor="let file of (loadedFiles$ | async) || []" [file]="file"
+                    [showDelete]="controlFile.enabled" (removed)="removeFile(file)">
+                  </tui-file>
 
-                <tui-file *ngFor="let file of rejectedFiles | async" state="error" [file]="file"
-                  [showDelete]="controlFile.enabled" (removed)="clearRejected(file)"></tui-file>
+                  <tui-file *ngFor="let file of rejectedFiles | async" state="error" [file]="file"
+                    [showDelete]="controlFile.enabled" (removed)="clearRejected(file)"></tui-file>
 
-                <tui-file *ngFor="let file of loadingFiles | async" state="loading" [file]="file"
-                  [showDelete]="controlFile.enabled">
-                </tui-file>
+                  <tui-file *ngFor="let file of loadingFiles | async" state="loading" [file]="file"
+                    [showDelete]="controlFile.enabled">
+                  </tui-file>
 
-              </tui-files>
+                </tui-files>
 
-              <tui-error [formControl]="controlFile" [error]="['maxLength'] | tuiFieldError | async"></tui-error>
+                <tui-error [formControl]="controlFile" [error]="['maxLength'] | tuiFieldError | async"></tui-error>
 
-              <tui-textarea style="margin-top: 16px; min-height: 180px;" [(ngModel)]="comment" [expandable]="true"
-                [tuiTextfieldCleaner]="true">
-                Комментарий
-              </tui-textarea>
-              <button class="btn-draw" style="margin-top: 16px;" size="m" tuiButton (click)="onConfirmService()"
-              [disabled]="!controlFile.valid">
-                Добавить в корзину
-              </button>
+                <tui-textarea style="margin-top: 16px; min-height: 180px;" [(ngModel)]="comment"
+                  (ngModelChange)="saveDataToLocalStorage()" [expandable]="true" [tuiTextfieldCleaner]="true">
+                  Комментарий
+                </tui-textarea>
+                <button class="btn-draw" style="margin-top: 16px;" size="m" tuiButton (click)="onConfirmService()"
+                  [disabled]="!controlFile.valid">
+                  Добавить в корзину
+                </button>
+              </tui-loader>
             </div>
           </tui-accordion-item>
         </tui-accordion>
+
+      </tui-scrollbar>
+    </div>
+  </div>
+</div>
+
+<ng-template #serviceTemplate let-item>
+  {{ item.title }}
+</ng-template>
+
+<ng-template #contentAuth let-dialog>
+  <div class="t-alert t-alert_status_info">
+    <div class="t-alert__icon">
+      <tui-svg src="tuiIconInfo"></tui-svg>
+    </div>
+    <div class="t-alert__content">
+      <div class="t-alert__title">Внимание</div>
+      <div class="t-alert__text">Чтобы добавить заказ в корзину, необходимо авторизоваться</div>
+      <div tuiMode="onLight" class="controls tui-space_top-3 t-alert__buttons">
+        <button tuiButton type="button" appearance="outline" class="tui-space_right-3" [size]="'s'"
+          (click)="openLoginModal();dialog.complete()"><strong>Авторизоваться</strong></button>
+        <button class="t-alert_button-link" tuiLink type="button" [pseudo]="true"
+          (click)="dialog.complete()">Закрыть</button>
       </div>
     </div>
   </div>
+</ng-template>
 
-  <ng-template #serviceTemplate let-item>
-    {{ item.title }}
-  </ng-template>
-
-  <ng-template #contentAuth let-dialog>
-    <div class="t-alert t-alert_status_info">
-      <div class="t-alert__icon">
-        <tui-svg src="tuiIconInfo"></tui-svg>
-      </div>
-      <div class="t-alert__content">
-        <div class="t-alert__title">Внимание</div>
-        <div class="t-alert__text">Чтобы добавить заказ в корзину, необходимо авторизоваться</div>
-        <div tuiMode="onLight" class="controls tui-space_top-3 t-alert__buttons">
-          <button tuiButton type="button" appearance="outline" class="tui-space_right-3" [size]="'s'"
-            (click)="openLoginModal();dialog.complete()"><strong>Авторизоваться</strong></button>
-          <button class="t-alert_button-link" tuiLink type="button" [pseudo]="true"
-            (click)="dialog.complete()">Закрыть</button>
-        </div>
-      </div>
+<ng-template #contentSuccess let-dialog>
+  <div class="t-alert t-alert_status_success">
+    <div class="t-alert__icon">
+      <tui-svg src="assets/check-circle.svg"></tui-svg>
     </div>
-  </ng-template>
-
-  <ng-template #contentSuccess let-dialog>
-    <div class="t-alert t-alert_status_success">
-      <div class="t-alert__icon">
-        <tui-svg src="assets/check-circle.svg"></tui-svg>
+    <div class="t-alert__content">
+      <div class="t-alert__title">Заказ успешно добавлен</div>
+      <div tuiMode="onLight" class="controls tui-space_top-3 t-alert__buttons">
+        <button tuiButton type="button" appearance="outline" class="tui-space_right-3" [size]="'s'"
+          (click)="dialog.complete()"><strong>Остаться</strong></button>
+        <button class="t-alert_button-link" tuiLink type="button" [pseudo]="true"
+          (click)="goToBasket();dialog.complete()">Перейти в корзину</button>
       </div>
-      <div class="t-alert__content">
-        <div class="t-alert__title">Заказ успешно добавлен</div>
-        <div tuiMode="onLight" class="controls tui-space_top-3 t-alert__buttons">
-          <button tuiButton type="button" appearance="outline" class="tui-space_right-3" [size]="'s'"
-            (click)="dialog.complete()"><strong>Остаться</strong></button>
-          <button class="t-alert_button-link" tuiLink type="button" [pseudo]="true"
-            (click)="goToBasket();dialog.complete()">Перейти в корзину</button>
-        </div>
-      </div>
-    </div>
-  </ng-template>
-
-  <div class="modal-overlay" *ngIf="showLoginModal">
-    <div class="modal-content">
-      <app-login [isDialog]="true" (loginSuccess)="onLoginSuccess()" (close)="showLoginModal = false"></app-login>
     </div>
   </div>
-</tui-root>
+</ng-template>
+
+
+<!-- Модальное окно авторизации -->
+<div class="modal-overlay" *ngIf="showLoginModal">
+  <div class="modal-content">
+    <app-login [isDialog]="true"
+      (loginSuccess)="onLoginSuccess()"
+      (registrationRequested)="openRegistrationModal()"
+      (close)="showLoginModal = false">
+    </app-login>
+  </div>
+</div>
+
+<!-- Модальное окно регистрации -->
+<div class="modal-overlay" *ngIf="showRegistrationModal">
+  <div class="modal-content">
+    <app-register [isDialog]="true"
+      (loginSuccess)="onRegistrationSuccess()"
+      (close)="showRegistrationModal = false">
+    </app-register>
+  </div>
+</div>

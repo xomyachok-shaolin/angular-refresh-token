@@ -170,8 +170,36 @@ export class ArchivedComponent implements OnInit {
   }
 
   ngOnInit() {
+
+    this.fetchInitialData();
+    this.initFormListeners();
+
     this.fetchOrders(this.currentPage);
 
+    this.form.valueChanges.subscribe(() => {
+      this.fetchOrders(this.currentPage);
+    });
+  }
+
+  private fetchInitialData() {
+    this.orderService.getServiceTitles().pipe(take(1)).subscribe({
+      next: (services) => {
+        this.availableServices = services.map(service => ({
+          label: service.title,
+          value: service.uuid
+        }));
+        this.cdRef.markForCheck();
+      },
+      error: (error) => {
+        console.error('Ошибка при загрузке услуг:', error);
+        this.availableServices = [];
+      }
+    });
+
+    this.fetchOrders(this.currentPage);
+  }
+
+  private initFormListeners() {
     this.form.valueChanges.subscribe(() => {
       this.fetchOrders(this.currentPage);
     });

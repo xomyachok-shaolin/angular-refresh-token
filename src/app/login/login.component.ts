@@ -32,6 +32,11 @@ export class LoginComponent implements OnInit {
   roles: string[] = [];
   showErrorNotification = false;
 
+  @Input() isDialog: boolean = false;
+  @Output() loginSuccess = new EventEmitter<void>();
+  @Output() registrationRequested = new EventEmitter<void>();
+  @Output() close = new EventEmitter<void>();
+
   constructor(
     private authService: AuthService,
     private storageService: StorageService,
@@ -47,10 +52,6 @@ export class LoginComponent implements OnInit {
       this.roles = this.storageService.getUser().roles;
     }
   }
-
-  @Input() isDialog: boolean = false;
-  @Output() loginSuccess = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
 
   onSubmit(form: NgForm): void {
     if (form.invalid) {
@@ -77,10 +78,7 @@ export class LoginComponent implements OnInit {
           this.loginSuccess.emit();
         } else {
           // Not opened as a dialog, proceed as normal
-          this.router.navigate(['/personal-cabinet'], { replaceUrl: true }).then(() => {
-            window.location.reload();
-            this.cdr.detectChanges();
-          });
+          this.router.navigate(['/personal-cabinet']);
         }
       },
       error: (err) => {
@@ -94,6 +92,10 @@ export class LoginComponent implements OnInit {
 
   navigateToForgotPassword(): void {
     this.router.navigate(['/forgot-password']);
+  }
+
+  onRegistrationRequest(): void {
+      this.registrationRequested.emit();
   }
 
   onCloseNotification(): void {

@@ -14,3 +14,4 @@ services:
       # for development
       - BACKEND_URL=http://192.168.70.220:8888
       - GEOSERVER_URL=http://geoserver.usgik.ru:9090
+      - DADATA_TOKEN=66dbc27b539b0ac52e5bf9dc1706403f634ab517

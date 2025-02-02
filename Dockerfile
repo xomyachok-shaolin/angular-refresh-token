@@ -14,4 +14,4 @@ COPY ./default.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80 443
 
 # Запускаем Nginx с заменой переменных окружения только для BACKEND_URL и GEOSERVER_URL
-CMD ["/bin/bash", "-c", "envsubst '${BACKEND_URL} ${GEOSERVER_URL}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+CMD ["/bin/bash", "-c", "envsubst '${BACKEND_URL} ${GEOSERVER_URL} ${DADATA_TOKEN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && envsubst '${DADATA_TOKEN}' < /usr/share/nginx/html/assets/config.json.template > /usr/share/nginx/html/assets/config.json && exec nginx -g 'daemon off;'"]

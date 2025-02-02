@@ -28,39 +28,58 @@
   align-items: center;
   padding: 32px;
   background: #f6f6f6;
+  height: calc(100vh - 128px);
 }
 
 .main-container {
   display: flex;
   width: 100%;
-  height: calc(100vh - 160px); /* Adjust height as needed */
+  height: 100%;
+  gap: 32px;
 }
 
 .left-panel {
   flex: 1;
+  min-width: 0;
   height: 100%;
+  position: relative;
 }
 
 .right-panel {
-  min-width: 420px;
-  max-width: 420px;
+  flex: 0 0 420px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel tui-scrollbar {
   flex: 1;
-  padding-left: 32px;
+  overflow-y: auto;
+}
+
+.right-panel tui-accordion {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
+  .content {
+    height: auto;
+    padding: 16px;
+  }
+
   .custom-header {
     flex-direction: column;
     align-items: center;
   }
 
-  .left-section,
-  .right-section {
-    width: 100%;
-    text-align: center;
-    margin-top: 10px;
-  }
+  .left-panel,
+  .right-panel {
+    flex: none;
+    height: 50vh;
+    }
 
   .logo-img {
     width: 120px;
@@ -76,6 +95,7 @@
 
   .main-container {
     flex-direction: column;
+    gap: 16px;
   }
 
   .left-panel,
@@ -85,7 +105,27 @@
   }
 
   .right-panel {
-    padding-top: 20px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .filter-button {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .year-range-slider {
+    bottom: 60px;
+    right: 10px;
+    width: 180px;
+  }
+}
+
+/* Скрываем элементы при маленьком масштабе */
+@media (max-width: 480px) {
+  .filter-button,
+  .year-range-slider {
+    transform: scale(0.9);
   }
 }
 
@@ -106,7 +146,7 @@ tui-toggle {
 }
 
 .custom-accordion-content {
-  background-color: #ECECEC;
+  background-color: #ececec;
   padding: 16px;
   margin: -20px;
 }
@@ -156,7 +196,8 @@ tui-toggle {
   z-index: 1000; /* Ensure it appears above the map */
   background-color: white;
   border-radius: 50%;
-  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05); 
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
 }
 
 .year-range-slider {
@@ -178,7 +219,6 @@ tui-toggle {
   color: #555;
   margin-top: 5px;
 }
-
 
 .map-loader {
   position: absolute;
@@ -212,26 +252,22 @@ tui-toggle {
   border-radius: 8px;
 }
 
-
 ::ng-deep tui-dialog .t-content {
   padding: 0 !important;
 }
 
 .t-alert_status_success {
-  
   color: var(--tui-success-fill);
   background: var(--tui-success-bg) !important;
   box-shadow: var(--tui-shadow-dropdown);
   border-radius: var(--tui-radius-s);
-  
 }
 
-.t-alert_status_info { 
+.t-alert_status_info {
   color: var(--tui-info-fill);
   background: var(--tui-info-bg) !important;
   box-shadow: var(--tui-shadow-dropdown);
   border-radius: var(--tui-radius-s);
-  
 }
 
 .t-alert {
@@ -258,7 +294,7 @@ tui-toggle {
 
 .t-alert__text {
   margin-bottom: 12px;
-  color: #1B1F3BA6;
+  color: #1b1f3ba6;
   font-weight: bold;
   font-size: 13px;
 }
@@ -266,4 +302,4 @@ tui-toggle {
 .t-alert__buttons {
   display: flex;
   gap: 14px;
-} 
+}

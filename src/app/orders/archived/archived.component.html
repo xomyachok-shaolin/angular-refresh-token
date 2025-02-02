@@ -11,7 +11,11 @@
       *tuiDataList
       tuiMultiSelectGroup
       [items]="filterServices(serviceSearch)"
-    ></tui-data-list-wrapper>
+    >
+    <ng-container *ngIf="availableServices.length === 0">
+      <tui-loader></tui-loader>
+    </ng-container>
+  </tui-data-list-wrapper>
   </tui-multi-select>
   
     <tui-input-date-range
@@ -70,7 +74,6 @@
 
 <div class="table-container" *ngIf="hasOrders; else noOrders" #tableContainer>
   <tui-scrollbar waIntersectionRoot class="scrollbar" [hidden]="true">
-    <form [formGroup]="form"></form>
     <table size="l" tuiTable class="table" [columns]="columns">
       <thead>
         <tr tuiThGroup>

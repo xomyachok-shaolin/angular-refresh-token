@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { AuthService } from '../_services/auth.service';
 import { NgForm, NgModel } from '@angular/forms';
 import { TuiAlertService } from '@taiga-ui/core';
@@ -29,6 +29,10 @@ export class RegisterComponent {
   @ViewChild('password') passwordControl!: NgModel;
   @ViewChild('confirmPassword') confirmPasswordControl!: NgModel;
 
+  @Input() isDialog: boolean = false;
+  @Output() loginSuccess = new EventEmitter<void>(); // Оповещение родителя о успешном входе
+  @Output() close = new EventEmitter<void>();
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -46,7 +50,7 @@ export class RegisterComponent {
 
   onSubmit(form: NgForm): void {
     if (form.invalid || !this.checkPasswordsMatch()) {
-      return; // Прерываем выполнение, если форма невалидна
+      return; 
     }
 
     const { email, password } = this.form;
@@ -72,13 +76,13 @@ export class RegisterComponent {
             .open('Вы успешно зарегистрировались и вошли в систему!', { status: 'success' })
             .subscribe();
 
-          // Перенаправляем пользователя в личный кабинет
-          this.router
-            .navigate(['/personal-cabinet'], { replaceUrl: true })
-            .then(() => {
-              window.location.reload();
-              this.cdr.detectChanges(); // Обновляем после перехода на другую страницу
-            });
+            if (this.isDialog) {
+              // When opened from ServicesComponent, emit success event
+              this.loginSuccess.emit();
+            } else {
+              // Not opened as a dialog, proceed as normal
+              this.router.navigate(['/personal-cabinet']);
+            }
         },
         error: (err) => {
           this.errorMessage = err.error || 'Ошибка при регистрации или входе';
@@ -91,5 +95,9 @@ export class RegisterComponent {
 
   onCloseNotification(): void {
     this.showErrorNotification = false;
+  }
+
+  onClose(): void {
+    this.close.emit();
   }
 }

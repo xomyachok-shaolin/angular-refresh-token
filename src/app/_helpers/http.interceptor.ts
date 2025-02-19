@@ -36,6 +36,17 @@ export class HttpRequestInterceptor implements HttpInterceptor {
       catchError((error) => {
         if (
           error instanceof HttpErrorResponse &&
+          error.status === 500
+        ) {
+          this.storageService.clean();
+          this.eventBusService.emit(new EventData('logout', null));
+          this.router.navigate(['/home']);
+          // Можно также показать уведомление, если необходимо
+          this.alertService.open('На сервере произошла ошибка (500). Выход из учетной записи и перенаправление на главную страницу.', { status: 'error' }).subscribe();
+          return throwError(() => error);
+        }
+        if (
+          error instanceof HttpErrorResponse &&
           !req.url.includes('auth/signin') &&
           error.status === 401
         ) {

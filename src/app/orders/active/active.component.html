@@ -36,9 +36,10 @@
       [(search)]="statusSearch"
       class="b-form"
     >
-      Статус
+    Статус выполнения
       <tui-data-list-wrapper
         *tuiDataList
+        tuiMultiSelectGroup
         [items]="filterStatuses(statusSearch)"
       ></tui-data-list-wrapper>
     </tui-multi-select>
@@ -121,17 +122,17 @@
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
-            {{ order.execution | date : "dd.MM.yyyy" }}
+            {{ order.paymentDate | date : "dd.MM.yyyy" }}
           </td>
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
             <div
               [class]="{
-                completed: order.executionStatus === 'Выполнено',
+                completed: order.executionStatus === 'Готов',
                 processing: order.executionStatus === 'В обработке',
-                denied: order.executionStatus === 'Отказано',
-                basket: order.executionStatus === 'Не оплачено'
+                denied: order.executionStatus === 'Ждет оплаты',
+                basket: order.executionStatus === 'В корзине'
               }"
             >
               {{ order.executionStatus }}

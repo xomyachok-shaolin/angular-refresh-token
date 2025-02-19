@@ -619,10 +619,17 @@ this.getCurrentForm().valueChanges.subscribe(() => {
   }
 
   nextStep(): void {
+    if (this.currentStep === 0 && !this.anySelected) {
+      this.alertService
+        .open('Выберите хотя бы одну услугу', { status: TuiNotification.Warning })
+        .subscribe();
+      return;
+    }
     if (this.currentStep < 2) {
       this.currentStep++;
     }
   }
+  
 
   prevStep(): void {
     if (this.currentStep > 0) {

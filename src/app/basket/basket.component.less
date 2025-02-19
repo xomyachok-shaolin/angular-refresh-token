@@ -22,7 +22,6 @@ tui-stepper {
   background-color: #fff;
   border-radius: 4px;
   padding: 2rem 1rem;
-  max-height: 60vh;
 }
 
 .basket-header-row,
@@ -53,9 +52,6 @@ tui-stepper {
   text-overflow: ellipsis;
 }
 
-.basket-price {
-  // white-space: nowrap; /* Предотвращаем перенос цены на новую строку */
-}
 
 .basket-content {
   /* Включаем grid-сетку: три колонки */
@@ -198,18 +194,9 @@ tui-stepper {
   margin-top: 3rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
   .radio-group {
     flex-direction: column;
-  }
-
-  .form-buttons {
-    flex-direction: column;
-  }
-
-  .form-buttons button {
-    width: 100%;
-    margin-bottom: 10px;
   }
 }
 

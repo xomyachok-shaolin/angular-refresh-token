@@ -1,8 +1,8 @@
 <h1>Корзина</h1>
 <tui-stepper *ngIf="hasBasket" [(activeItemIndex)]="currentStep">
   <button tuiStep stepState="pass">Состав заказа</button>
-  <button tuiStep>Оформление заказа</button>
-  <button tuiStep>Подтверждение заказа</button>
+  <button tuiStep [disabled]="!anySelected">Оформление заказа</button>
+  <button tuiStep [disabled]="getCurrentForm().invalid && !anySelected" (click)="placeOrder()">Подтверждение заказа</button>
 </tui-stepper>
 
 <div [ngSwitch]="currentStep">
@@ -79,13 +79,13 @@
         <tui-money class="basket-price" [value]="totalAmount"></tui-money>
       </div>
       <div class="button-container">
-        <button tuiButton size="m" style="width: 125px;" appearance="primary" (click)="nextStep()">
+        <button tuiButton size="m" style="width: 125px;" appearance="primary" (click)="nextStep()" [disabled]="!anySelected">
           Далее
         </button>
       </div>
     </div>
     <ng-template #noBasket>
-      <div class="tui-text_body-m" style="margin-top:2rem; text-align: center;">Ваша корзина пуста</div>
+      <div class="tui-text_body-xl" style="margin-top:15rem;margin-bottom: 45rem; text-align: center;">Ваша корзина пуста</div>
     </ng-template>
   </div>
 
@@ -104,7 +104,11 @@
             </tui-radio-block>
           </div>
 
+          
     <form [formGroup]="getCurrentForm()" (ngSubmit)="placeOrder()">
+      <tui-scrollbar waIntersectionRoot class="scrollbar">
+        <div style="max-height: 55vh;">
+   
       <!-- Физическое лицо -->
       <div class="form-section" *ngIf="clientType === 'INDIVIDUAL'">
         <h3>Информация для физического лица</h3>
@@ -310,6 +314,9 @@
         </tui-input>
         <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
       </div>
+
+    </div>
+          </tui-scrollbar>
   
       <!-- Кнопки управления формой заказа -->
       <div class="form-buttons">

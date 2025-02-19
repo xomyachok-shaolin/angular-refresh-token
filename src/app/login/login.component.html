@@ -1,4 +1,64 @@
-  <div class="col-md-12">
+  <div *ngIf="!isDialog" style="height: 80vh;" class="col-md-12">
+    <div class="card card-container">
+      <button *ngIf="isDialog" tuiButton appearance="icon" icon="tuiIconClose" class="close-button"
+      (click)="onClose()"></button>
+      <h2 tuiTextfield size="xl" class="text-header">Вход в личный кабинет</h2>
+      <form (ngSubmit)="onSubmit(f)" #f="ngForm" novalidate>
+        <div class="form-group input-email">
+          <tui-input [(ngModel)]="form.email" name="email" required #email="ngModel" [tuiTextfieldCleaner]="true"
+            [ngClass]="{ 'is-invalid': f.submitted && email.invalid }">
+            E-mail
+            <input autocomplete="email" placeholder="mail@mail.ru" tuiTextfield type="email" />
+          </tui-input>
+          <div *ngIf="email.invalid && (email.dirty || f.submitted)" class="invalid-feedback">
+            <div *ngIf="email.errors?.['required']">
+              Обязательно к заполнению!
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group input-password">
+          <div class="password-input-wrapper" [class.has-password]="form.password">
+            <tui-input [(ngModel)]="form.password" name="password" required #password="ngModel"
+              [tuiTextfieldCleaner]="true" [ngClass]="{ 'is-invalid': f.submitted && password.invalid }">
+
+              Пароль
+              <input tuiTextfield type="password" />
+            </tui-input>
+
+            <a (click)="navigateToForgotPassword()" class="forgot-password-link">
+              Забыли?
+            </a>
+          </div>
+          <div *ngIf="password.invalid && (password.dirty || f.submitted)" class="invalid-feedback">
+
+            <div *ngIf="password.errors?.['required']">
+              Обязательно к заполнению!
+            </div>
+            <!-- <div *ngIf="password.errors?.['minlength']">Пароль должен быть не менее 6 символов</div> -->
+          </div>
+        </div>
+
+        <tui-checkbox-labeled [(ngModel)]="form.isRemember" name="isRemember" [ngModelOptions]="{ standalone: true }">
+          Запомнить меня
+        </tui-checkbox-labeled>
+
+        <button size="l" appearance="primary" tuiButton type="submit">
+          Вход
+        </button>
+
+        <button size="l" appearance="secondary" tuiButton type="button" (click)="onRegistrationRequest()">
+          Регистрация
+        </button>
+      </form>
+    </div>
+    <tui-notification *ngIf="showErrorNotification" status="error" [hasIcon]="false" (close)="onCloseNotification()">
+      {{ errorMessage }}
+    </tui-notification>
+  </div>
+
+
+  <div *ngIf="isDialog" class="col-md-12">
     <div class="card card-container">
       <button *ngIf="isDialog" tuiButton appearance="icon" icon="tuiIconClose" class="close-button"
       (click)="onClose()"></button>

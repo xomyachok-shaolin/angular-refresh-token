@@ -137,10 +137,9 @@ export class ActiveComponent implements OnInit {
   ];
 
   public availableStatuses: Array<{ label: string; value: string }> = [
-    { label: 'Выполнено', value: 'Ready' },
+    { label: 'Готов', value: 'Ready' },
     { label: 'В обработке', value: 'inProcessing' },
-    { label: 'Отказано', value: 'NotReady' },
-    { label: 'Не оплачено', value: 'inBasket' },
+    { label: 'Ждет оплаты', value: 'NotReady' },
   ];
 
   public serviceSearch: string = '';
@@ -430,13 +429,11 @@ export class ActiveComponent implements OnInit {
   private mapStatus(status: string): string {
     switch (status) {
       case 'Ready':
-        return 'Выполнено';
+        return 'Готов';
       case 'inProcessing':
         return 'В обработке';
       case 'NotReady':
-        return 'Отказано';
-      case 'inBasket':
-        return 'Не оплачено';
+        return 'Ждет оплаты';
       default:
         return status;
     }

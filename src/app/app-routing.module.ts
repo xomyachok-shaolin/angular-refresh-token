@@ -19,6 +19,7 @@ import { ServicesComponent } from './services/services.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { BasketComponent } from './basket/basket.component';
+import { AuthGuard } from './_helpers/auth.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -30,12 +31,14 @@ const routes: Routes = [
   { path: 'profile', component: ProfileComponent },
   { path: 'user', component: BoardUserComponent },
   { path: 'services', component: ServicesComponent },
-  { path: 'basket', component: BasketComponent },
+  { path: 'basket', component: BasketComponent,
+    canActivate: [AuthGuard] },
   { path: 'mod', component: BoardModeratorComponent },
   { path: 'admin', component: BoardAdminComponent },
   {
     path: 'personal-cabinet',
     component: PersonalCabinetComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: 'main', component: MainComponent },
       { path: 'additional', component: AdditionalComponent },
@@ -46,6 +49,7 @@ const routes: Routes = [
   {
     path: 'orders',
     component: OrdersComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: 'active', component: ActiveComponent },
       { path: 'archived', component: ArchivedComponent },

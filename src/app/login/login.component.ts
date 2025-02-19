@@ -95,7 +95,11 @@ export class LoginComponent implements OnInit {
   }
 
   onRegistrationRequest(): void {
+    if (this.isDialog)
       this.registrationRequested.emit();
+    else 
+
+    this.router.navigate(['/register']);
   }
 
   onCloseNotification(): void {

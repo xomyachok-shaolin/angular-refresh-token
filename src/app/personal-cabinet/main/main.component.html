@@ -1,4 +1,4 @@
-<div class="personal-cabinet">
+ <div class="personal-cabinet">
   <!-- Переключение типа клиента -->
   <div class="radio-group">
     <tui-radio-block item="INDIVIDUAL" [(ngModel)]="clientType" required>
@@ -13,7 +13,9 @@
   </div>
 
   <form [formGroup]="getCurrentForm()" (ngSubmit)="onSave()">
-      <!-- Физическое лицо -->
+    <tui-scrollbar waIntersectionRoot class="scrollbar">
+      <div style="max-height: 55vh;">
+    <!-- Физическое лицо -->
     <div class="form-section" *ngIf="clientType === 'INDIVIDUAL'">
       <h3>Информация для физического лица</h3>
       <tui-input formControlName="lastName">
@@ -218,7 +220,8 @@
       </tui-input>
       <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
     </div>
-
+    </div>
+    </tui-scrollbar>
     <!-- Кнопки Сброс и Сохранить появляются, если данные изменены -->
     <div class="form-buttons" *ngIf="getCurrentForm().dirty">
       <button tuiButton appearance="outline" type="button" (click)="onReset()">

@@ -718,6 +718,7 @@ export class ServicesComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('There was an error fetching parameters!', error);
         this.isParametersLoading = false;
+        this.clearLocalData();
       },
     });
   }

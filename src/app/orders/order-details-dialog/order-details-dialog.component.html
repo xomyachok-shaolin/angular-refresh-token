@@ -1,0 +1,62 @@
+<div
+  tuiCardLarge
+  tuiSurface="elevated"
+>
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h3>Заказ №{{ order.orderNumber }}</h3>
+      <div class="secondary">Договор №{{ order.contractNumber }}</div>
+      <div class="date">{{ order.created | date:'dd.MM.yyyy HH:mm' }}</div>
+    </div>
+    <div class="finance">
+      <tui-money [value]="order.cost"></tui-money>
+      <tui-tag
+        size="s"
+        [status]="order.paymentStatus ? 'success' : 'warning'"
+        [value]="order.paymentStatus ? 'Оплачено' : 'Не оплачено'"
+      ></tui-tag>
+    </div>
+  </div>
+</div>
+
+<!-- Сервис(ы) -->
+<tui-accordion [closeOthers]="false" class="services-accordion">
+  <tui-accordion-item *ngFor="let svc of order.service">
+    <div class="svc-header">
+      <strong>{{ svc.title }}</strong>
+    </div>
+
+    <ng-template tuiAccordionItemContent>
+      <p class="svc-desc">{{ svc.description }}</p>
+
+      <table tuiTable class="params-table">
+        <thead tuiThGroup>
+          <tr>
+            <th tuiTh>Параметр</th>
+            <th tuiTh>Описание</th>
+            <th tuiTh>Значение</th>
+            <th tuiTh>Стоимость</th>
+          </tr>
+        </thead>
+        <tbody tuiTbody>
+          <tr *ngFor="let p of svc.parameters">
+            <td tuiTd>{{ p.title }}</td>
+            <td tuiTd>{{ p.description }}</td>
+            <td tuiTd>{{ showValue(p) }}</td>
+            <td tuiTd>
+              {{ p.cost | number:'1.2-2' }} ₽
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngFor="let p of svc.parameters">
+        <app-polygon-viewer
+          *ngIf="p.polygon"
+          [polygon]="p.polygon"
+        ></app-polygon-viewer>
+      </div>
+    </ng-template>
+  </tui-accordion-item>
+</tui-accordion>

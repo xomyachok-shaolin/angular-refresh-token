@@ -1,15 +1,25 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
+import {
+  TuiAlertService,
+  TuiDialogService,
+  TuiNotification,
+} from '@taiga-ui/core';
 import { StorageService } from '../_services/storage.service';
 import { BasketService } from '../_services/basket.service';
 import { Router } from '@angular/router';
-import { switchMap, of } from 'rxjs';
+import { switchMap, of, forkJoin } from 'rxjs';
 import { TUI_PROMPT, TuiFileLike, TuiPromptData } from '@taiga-ui/kit';
 import { ConfigService } from '../config.service';
 
-export type ClientType = 'INDIVIDUAL' | 'ENTERPRISER' | 'LEGAL';
+export type ClientType = 'INDIVIDUALS' | 'ENTERPRISER' | 'LEGAL';
 
 interface BasketItem {
   uuid: string;
@@ -18,7 +28,7 @@ interface BasketItem {
   cost: number;
   files?: any[];
   parameters?: any[];
-  comment?: string,
+  comment?: string;
   selected: boolean;
 }
 
@@ -34,17 +44,19 @@ export class BasketComponent implements OnInit {
   hasBasket = false;
   totalAmount = 0;
 
+  orderUuid: string = '';
+receiptPdfUrl: string = '';
+
   // Для каждого типа клиента своя форма
   individualForm: FormGroup;
   enterpriserForm: FormGroup;
   legalForm: FormGroup;
   // Текущий тип клиента (для переключения)
-  clientType: ClientType = 'INDIVIDUAL';
+  clientType: ClientType = 'INDIVIDUALS';
 
   isLoading = false;
   // Сохраняем исходное значение формы для последующего сравнения
   private originalFormValue: string = '';
-
 
   // DaData токен
   private readonly DADATA_API_TOKEN = this.configService.getDadataToken();
@@ -53,7 +65,6 @@ export class BasketComponent implements OnInit {
   showCompanySuggestions = false;
   bankSuggestions: any[] = [];
   showBankSuggestions = false;
-
 
   allSelected = false;
 
@@ -67,11 +78,12 @@ export class BasketComponent implements OnInit {
     private dialogService: TuiDialogService,
     private alertService: TuiAlertService,
     private configService: ConfigService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {
-     // Форма для физического лица
-     this.individualForm = this.fb.group({
-      clientType: ['INDIVIDUAL', Validators.required],
+    // Форма для физического лица
+    this.individualForm = this.fb.group({
+      clientType: ['INDIVIDUALS', Validators.required],
       lastName: ['', Validators.required],
       firstName: ['', Validators.required],
       middleName: [''],
@@ -227,28 +239,30 @@ export class BasketComponent implements OnInit {
     this.loadBasket();
     this.loadClientDataIntoOrderForm();
 
-// При изменении текущей формы сохраняем её значение в строку для сравнения
-this.getCurrentForm().valueChanges.subscribe(() => {
-  const currentValue = JSON.stringify(this.getCurrentForm().value);
-  if (currentValue === this.originalFormValue) {
-    this.getCurrentForm().markAsPristine();
-  }
-});
+    this.basketService.getBasketItemCount();
+
+    // При изменении текущей формы сохраняем её значение в строку для сравнения
+    this.getCurrentForm().valueChanges.subscribe(() => {
+      const currentValue = JSON.stringify(this.getCurrentForm().value);
+      if (currentValue === this.originalFormValue) {
+        this.getCurrentForm().markAsPristine();
+      }
+    });
   }
 
-    // Метод для выбора текущей формы в зависимости от clientType
-    getCurrentForm(): FormGroup {
-      switch (this.clientType) {
-        case 'INDIVIDUAL':
-          return this.individualForm;
-        case 'ENTERPRISER':
-          return this.enterpriserForm;
-        case 'LEGAL':
-          return this.legalForm;
-        default:
-          return this.individualForm;
-      }
+  // Метод для выбора текущей формы в зависимости от clientType
+  getCurrentForm(): FormGroup {
+    switch (this.clientType) {
+      case 'INDIVIDUALS':
+        return this.individualForm;
+      case 'ENTERPRISER':
+        return this.enterpriserForm;
+      case 'LEGAL':
+        return this.legalForm;
+      default:
+        return this.individualForm;
     }
+  }
 
   onCheckboxClick(event: MouseEvent, item: BasketItem): void {
     event.stopPropagation();
@@ -288,6 +302,9 @@ this.getCurrentForm().valueChanges.subscribe(() => {
         .subscribe();
       return;
     }
+
+  const allSelected = selectedUuids.length === this.basketData.length;
+
     const data: TuiPromptData = {
       content: 'Вы уверены, что хотите удалить выбранные услуги из корзины?',
       yes: 'Да',
@@ -301,18 +318,13 @@ this.getCurrentForm().valueChanges.subscribe(() => {
         data,
       })
       .pipe(
-        switchMap((confirmed) => {
+        switchMap(confirmed => {
           if (confirmed) {
-            // Use forkJoin to delete multiple services concurrently
-            return selectedUuids.length > 0
-              ? of(...selectedUuids).pipe(
-                  switchMap((uuid) => this.basketService.deleteService(uuid))
-                )
-              : of(null);
+            return this.basketService.deleteServices(selectedUuids, allSelected);
           } else {
             return of(null);
           }
-        })
+        })  
       )
       .subscribe({
         next: (response) => {
@@ -330,6 +342,8 @@ this.getCurrentForm().valueChanges.subscribe(() => {
               this.currentStep = 0;
               this.hasBasket = false;
             }
+
+            this.basketService.getBasketItemCount();
           }
         },
         error: (error) => {
@@ -360,7 +374,10 @@ this.getCurrentForm().valueChanges.subscribe(() => {
             uuid: service.uuid,
             title: service.title,
             description: service.description,
+            parameters: service.parameters,
             cost: service.cost,
+            files: service.files,
+            comment: service.comment,
             selected: true,
           }));
           this.calculateTotalAmount();
@@ -374,7 +391,7 @@ this.getCurrentForm().valueChanges.subscribe(() => {
 
   calculateTotalAmount(): void {
     this.totalAmount = this.basketData
-      .filter(item => item.selected)
+      .filter((item) => item.selected)
       .reduce((sum, item) => sum + item.cost, 0);
   }
 
@@ -385,11 +402,11 @@ this.getCurrentForm().valueChanges.subscribe(() => {
     this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe({
       next: (data) => {
         if (!data) return;
-        this.clientType = data.clientType || 'INDIVIDUAL';
+        this.clientType = data.clientType || 'INDIVIDUALS';
         // Заполняем нужную форму
-        if (this.clientType === 'INDIVIDUAL') {
+        if (this.clientType === 'INDIVIDUALS') {
           this.individualForm.patchValue({
-            clientType: data.clientType || 'INDIVIDUAL',
+            clientType: data.clientType || 'INDIVIDUALS',
             lastName: data.lastName || '',
             firstName: data.firstName || '',
             middleName: data.middleName || '',
@@ -439,9 +456,9 @@ this.getCurrentForm().valueChanges.subscribe(() => {
           this.legalForm.markAsPristine();
         }
       },
-      error: err => {
+      error: (err) => {
         console.error('Ошибка загрузки данных клиента:', err);
-      }
+      },
     });
   }
 
@@ -449,13 +466,13 @@ this.getCurrentForm().valueChanges.subscribe(() => {
   updateClientData(): void {
     const currentForm = this.getCurrentForm();
     if (currentForm.invalid) {
-     this.alertService
-       .open('Проверьте правильность заполнения полей', {
-         status: TuiNotification.Error,
-       })
-       .subscribe();
-     return;
-   }
+      this.alertService
+        .open('Проверьте правильность заполнения полей', {
+          status: TuiNotification.Error,
+        })
+        .subscribe();
+      return;
+    }
     const user = this.storageService.getUser();
     if (!user || !user.uuid) return;
     const body = {
@@ -465,72 +482,77 @@ this.getCurrentForm().valueChanges.subscribe(() => {
     };
 
     this.isLoading = true;
-    this.http.put('/api/client/update', body, { responseType: 'text' }).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.alertService
-          .open('Данные клиента обновлены', { status: TuiNotification.Success })
-          .subscribe();
+    this.http
+      .put('/api/client/update', body, { responseType: 'text' })
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.alertService
+            .open('Данные клиента обновлены', {
+              status: TuiNotification.Success,
+            })
+            .subscribe();
           this.originalFormValue = JSON.stringify(currentForm.value);
           currentForm.markAsPristine();
-      },
-      error: (err) => {
-        this.isLoading = false;
-        console.error('Ошибка обновления клиента:', err);
-        this.alertService
-          .open('Ошибка обновления клиента', { status: TuiNotification.Error })
-          .subscribe();
-      },
-    });
+        },
+        error: (err) => {
+          this.isLoading = false;
+          console.error('Ошибка обновления клиента:', err);
+          this.alertService
+            .open('Ошибка обновления клиента', {
+              status: TuiNotification.Error,
+            })
+            .subscribe();
+        },
+      });
   }
 
-  // Метод оформления заказа
   placeOrder(): void {
-
     const currentForm = this.getCurrentForm();
     if (currentForm.invalid) {
-     this.alertService
-       .open('Проверьте правильность заполнения полей', {
-         status: TuiNotification.Error,
-       })
-       .subscribe();
-     return;
-   }
-
+      this.alertService.open('Проверьте правильность заполнения полей', {
+        status: TuiNotification.Error,
+      }).subscribe();
+      return;
+    }
+  
     const selectedServices = this.basketData
       .filter(item => item.selected)
       .map(item => item.uuid);
+  
     if (!selectedServices.length) {
-      this.alertService
-        .open('Выберите хотя бы одну услугу', { status: TuiNotification.Warning })
-        .subscribe();
+      this.alertService.open('Выберите хотя бы одну услугу', {
+        status: TuiNotification.Warning,
+      }).subscribe();
       return;
     }
-
-    // Затем создаём заказ (пример запроса)
-    const orderData = {
-      // clientType: this.clientType,
-      ...selectedServices,
-      // можно добавить дублирование клиентских данных
+  
+    const orderPayload = {
+      input_str_services_uuids: selectedServices,
+      organizationDtoInput: currentForm.value,
     };
-    this.basketService.createOrder(selectedServices).subscribe({
-      next: () => {
-        this.alertService
-          .open('Заказ успешно оформлен', { status: TuiNotification.Success })
-          .subscribe();
+  
+    this.basketService.createOrder(orderPayload).pipe(
+      switchMap((uuid: string) => {
+        this.orderUuid = uuid;
+        return this.basketService.getReceiptPdf(uuid);
+      })
+    ).subscribe({
+      next: (pdfBlob) => {
+        this.receiptPdfUrl = URL.createObjectURL(pdfBlob);
         this.currentStep = 2;
-        // Очищаем корзину
         this.basketData = [];
         this.totalAmount = 0;
       },
       error: (err) => {
-        console.error('Ошибка оформления заказа:', err);
-        this.alertService
-          .open('Ошибка оформления заказа', { status: TuiNotification.Error })
-          .subscribe();
+        console.error('Ошибка при создании заказа или загрузке чека:', err);
+        this.alertService.open('Ошибка оформления заказа', {
+          status: TuiNotification.Error,
+        }).subscribe();
       },
     });
   }
+  
 
   // Автодополнение DaData для компании (ИНН, наименование)
   onCompanyNameInput(query: string): void {
@@ -540,7 +562,8 @@ this.getCurrentForm().valueChanges.subscribe(() => {
       this.companySuggestions = [];
       return;
     }
-    const url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party';
+    const url =
+      'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party';
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: `Token ${this.DADATA_API_TOKEN}`,
@@ -581,12 +604,13 @@ this.getCurrentForm().valueChanges.subscribe(() => {
   // Автодополнение DaData для банка
   onBankInput(query: string): void {
     const type = this.clientType;
-    if (!query.trim() || type === 'INDIVIDUAL') {
+    if (!query.trim() || type === 'INDIVIDUALS') {
       this.bankSuggestions = [];
       this.showBankSuggestions = false;
       return;
     }
-    const url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/bank';
+    const url =
+      'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/bank';
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: `Token ${this.DADATA_API_TOKEN}`,
@@ -621,7 +645,9 @@ this.getCurrentForm().valueChanges.subscribe(() => {
   nextStep(): void {
     if (this.currentStep === 0 && !this.anySelected) {
       this.alertService
-        .open('Выберите хотя бы одну услугу', { status: TuiNotification.Warning })
+        .open('Выберите хотя бы одну услугу', {
+          status: TuiNotification.Warning,
+        })
         .subscribe();
       return;
     }
@@ -629,7 +655,6 @@ this.getCurrentForm().valueChanges.subscribe(() => {
       this.currentStep++;
     }
   }
-  
 
   prevStep(): void {
     if (this.currentStep > 0) {
@@ -641,7 +666,8 @@ this.getCurrentForm().valueChanges.subscribe(() => {
     this.router.navigate(['/']);
   }
 
-  deleteService(uuid: string) {
+  deleteService(event: Event, uuid: string): void {
+    event.stopPropagation();
     const data: TuiPromptData = {
       content: 'Вы уверены, что хотите удалить эту услугу из корзины?',
       yes: 'Да',
@@ -659,14 +685,14 @@ this.getCurrentForm().valueChanges.subscribe(() => {
           if (confirmed) {
             return this.basketService.deleteService(uuid);
           } else {
-            return []; // Return an empty observable if the user cancels
+            return of(null);
           }
         })
       )
       .subscribe({
         next: (response) => {
           this.alertService
-            .open('Услуга успешно удалена.', { status: 'success' }) // Показываем текст ответа
+            .open('Услуга успешно удалена.', { status: 'success' })
             .subscribe();
           this.basketData = this.basketData.filter(
             (item) => item.uuid !== uuid
@@ -677,7 +703,9 @@ this.getCurrentForm().valueChanges.subscribe(() => {
           if (this.basketData.length === 0) {
             this.currentStep = 0;
             this.hasBasket = false;
-          }        
+          }
+
+          this.basketService.getBasketItemCount();
         },
         error: (error) => {
           console.error('Ошибка при удалении услуги из корзины:', error);
@@ -696,5 +724,4 @@ this.getCurrentForm().valueChanges.subscribe(() => {
         encodeURIComponent(fileName),
     };
   }
-
 }

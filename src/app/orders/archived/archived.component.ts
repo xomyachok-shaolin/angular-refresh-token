@@ -3,9 +3,12 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  Inject,
+  Injector,
   NgZone,
   OnInit,
   QueryList,
+  TemplateRef,
   ViewChild,
   ViewChildren,
 } from '@angular/core';
@@ -30,6 +33,7 @@ import {
 import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
+  TUI_IS_MOBILE,
   TuiBooleanHandler,
   TuiContextWithImplicit,
   TuiDay,
@@ -37,10 +41,13 @@ import {
 import { StorageService } from '../../_services/storage.service';
 import {
   TUI_PROMPT,
+  TuiPdfViewerService,
   TuiPromptData,
   tuiItemsHandlersProvider,
 } from '@taiga-ui/kit';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { OrderDetailsDialogComponent } from '../order-details-dialog/order-details-dialog.component';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 
 @Component({
   selector: 'app-archived',
@@ -103,6 +110,7 @@ export class ArchivedComponent implements OnInit {
   private resizeSubscription!: Subscription;
 
   @ViewChild('tableContainer') tableContainer!: ElementRef;
+  @ViewChild('actions') private readonly actionsTpl!: TemplateRef<unknown>;
 
   constructor(
     private orderService: OrderService,
@@ -112,7 +120,11 @@ export class ArchivedComponent implements OnInit {
     private ngZone: NgZone,
     private dialogService: TuiDialogService,
     private alertService: TuiAlertService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+        private readonly injector: Injector,
+    @Inject(TuiPdfViewerService)
+    private readonly pdfService: TuiPdfViewerService,
+    @Inject(TUI_IS_MOBILE) private readonly isMobile: boolean
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
@@ -120,6 +132,42 @@ export class ArchivedComponent implements OnInit {
       dateRange: new FormControl(null),
       searchAll: new FormControl(''),
     });
+  }
+
+showDetails(uuid: string): void {
+  this.orderService.getOrderDetails(uuid)
+    .pipe(take(1))
+    .subscribe(order => {
+      this.dialogService.open(
+        new PolymorpheusComponent(OrderDetailsDialogComponent, this.injector),
+        {
+          label: `Заказ №${order.orderNumber}`,
+          size: this.isMobile ? 'fullscreen' : 'l',
+          data: order,
+        }
+      ).subscribe();
+    });
+}
+
+  showInvoice(orderUuid: string) {
+    this.orderService
+      .getReceipt(orderUuid)
+      .pipe(take(1))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+          this.pdfService
+            .open(safe, {
+              label: `Счёт №${orderUuid}`,
+              actions: this.actionsTpl,
+            })
+            .subscribe();
+        },
+        error: (err) => {
+          console.error('Не удалось загрузить PDF счёта:', err);
+        },
+      });
   }
 
   public availableServices: Array<{ label: string; value: string }> = [
@@ -139,8 +187,10 @@ export class ArchivedComponent implements OnInit {
 
   public availableStatuses: Array<{ label: string; value: string }> = [
     { label: 'Готов', value: 'Ready' },
+    { label: 'Оплачено', value: 'Paid' },
     { label: 'В обработке', value: 'inProcessing' },
-    { label: 'Ждет оплаты', value: 'NotReady' },
+    { label: 'Ждёт оплаты', value: 'NotReady' },
+    { label: 'Отменённый', value: 'Cancelled' },
   ];
 
   public serviceSearch: string = '';
@@ -169,7 +219,6 @@ export class ArchivedComponent implements OnInit {
   }
 
   ngOnInit() {
-
     this.fetchInitialData();
     this.initFormListeners();
 
@@ -181,19 +230,22 @@ export class ArchivedComponent implements OnInit {
   }
 
   private fetchInitialData() {
-    this.orderService.getServiceTitles().pipe(take(1)).subscribe({
-      next: (services) => {
-        this.availableServices = services.map(service => ({
-          label: service.title,
-          value: service.uuid
-        }));
-        this.cdRef.markForCheck();
-      },
-      error: (error) => {
-        console.error('Ошибка при загрузке услуг:', error);
-        this.availableServices = [];
-      }
-    });
+    this.orderService
+      .getServiceTitles()
+      .pipe(take(1))
+      .subscribe({
+        next: (services) => {
+          this.availableServices = services.map((service) => ({
+            label: service.title,
+            value: service.uuid,
+          }));
+          this.cdRef.markForCheck();
+        },
+        error: (error) => {
+          console.error('Ошибка при загрузке услуг:', error);
+          this.availableServices = [];
+        },
+      });
 
     this.fetchOrders(this.currentPage);
   }
@@ -350,7 +402,7 @@ export class ArchivedComponent implements OnInit {
                 paymentStatus: order.paymentStatus ? 'Оплачено' : 'Не оплачено',
                 executionStatus: this.mapStatus(order.executionStatus),
                 execution: new Date(order.execution),
-                paymentDate: new Date(order.paymentDate),
+                created: new Date(order.created),
                 linkToGeoData: order.linkToGeoData,
                 passwordForLink: order.passwordForLink,
                 comment: order.comment,
@@ -431,10 +483,14 @@ export class ArchivedComponent implements OnInit {
     switch (status) {
       case 'Ready':
         return 'Готов';
+      case 'Paid':
+        return 'Оплачено';
       case 'inProcessing':
         return 'В обработке';
       case 'NotReady':
-        return 'Ждет оплаты';
+        return 'Ждёт оплаты';
+      case 'Cancelled':
+        return 'Отменённый';
       default:
         return status;
     }

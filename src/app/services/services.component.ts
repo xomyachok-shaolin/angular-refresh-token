@@ -13,11 +13,9 @@ import {
   tap,
 } from 'rxjs';
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   Inject,
-  Injector,
   OnDestroy,
   OnInit,
   TemplateRef,
@@ -1320,29 +1318,29 @@ export class ServicesComponent implements OnInit, OnDestroy {
     this.showLoginModal = true;
   }
 
-// Метод, вызываемый после успешного входа из модального окна логина
-onLoginSuccess(): void {
-  this.showLoginModal = false;
-  this.addServiceToCart();
-}
+  // Метод, вызываемый после успешного входа из модального окна логина
+  onLoginSuccess(): void {
+    this.showLoginModal = false;
+    this.addServiceToCart();
+  }
 
-// Если в окне логина пользователь запрашивает регистрацию,
-// закрываем окно логина и открываем окно регистрации
-openRegistrationModal(): void {
-  this.showLoginModal = false;
-  this.showRegistrationModal = true;
-}
+  // Если в окне логина пользователь запрашивает регистрацию,
+  // закрываем окно логина и открываем окно регистрации
+  openRegistrationModal(): void {
+    this.showLoginModal = false;
+    this.showRegistrationModal = true;
+  }
 
-// После успешной регистрации (которая включает автоматический вход)
-onRegistrationSuccess(): void {
-  this.showRegistrationModal = false;
-  this.addServiceToCart();
-}
+  // После успешной регистрации (которая включает автоматический вход)
+  onRegistrationSuccess(): void {
+    this.showRegistrationModal = false;
+    this.addServiceToCart();
+  }
 
   onConfirmService(): void {
-    // if (!this.selectedService) {
-    //   return;
-    // }
+    if (!this.selectedService) {
+      return;
+    }
 
     // Check if the user is logged in
     if (!this.storageService.isLoggedIn()) {
@@ -1374,7 +1372,6 @@ onRegistrationSuccess(): void {
       };
 
       if (param.parametersType === 'GEOMETRY') {
-        // Include the polygon points
         const polygons = this.drawnLayers.getLayers();
 
         if (polygons.length > 0) {
@@ -1387,15 +1384,10 @@ onRegistrationSuccess(): void {
 
           parameterData.value =
             '[' + points.map((obj) => `${obj.x}, ${obj.y}`).join('; ') + ']';
-        } else {
-          // Handle case where no polygon is drawn
-          console.warn('No polygon drawn for GEOMETRY parameter');
         }
       } else if (param.parametersType === 'CHECKBOX') {
-        // Include the value from the toggle
         parameterData.value = param.values.toString();
       } else if (param.parametersType === 'COUNT') {
-        // Include the selected value from the slider
         parameterData.value = param.control.value
           ? param.control.value.toString()
           : '';
@@ -1422,6 +1414,8 @@ onRegistrationSuccess(): void {
           this.clearLocalData();
           this.showSuccessNotification();
           this.isCheckoutLoading = false;
+
+          this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Error adding service to basket:', error);
@@ -1430,7 +1424,7 @@ onRegistrationSuccess(): void {
               status: 'error',
             })
             .subscribe();
-            this.isCheckoutLoading = false;
+          this.isCheckoutLoading = false;
         },
       });
   }
@@ -1630,11 +1624,11 @@ onRegistrationSuccess(): void {
 
     // 3. Файлы
     // Сохраняем только массив { name, src }
-    const filesToSave = Array.from(this.uploadedFiles).map((f) => ({
-      name: f.file.name,
-      src: f.src,
-    }));
-    localStorage.setItem(this.LS_KEY_FILES, JSON.stringify(filesToSave));
+    // const filesToSave = Array.from(this.uploadedFiles).map((f) => ({
+    //   name: f.file.name,
+    //   src: f.src,
+    // }));
+    // localStorage.setItem(this.LS_KEY_FILES, JSON.stringify(filesToSave));
 
     // 4. Комментарий
     localStorage.setItem(this.LS_KEY_COMMENT, this.comment || '');
@@ -1677,39 +1671,39 @@ onRegistrationSuccess(): void {
     }
 
     // 3. Файлы
-    const savedFiles = localStorage.getItem(this.LS_KEY_FILES);
-    if (savedFiles) {
-      try {
-        const parsedFiles = JSON.parse(savedFiles) as {
-          name: string;
-          src: string;
-        }[];
-        // Создадим массив "фиктивных" TuiFileLike
-        const controlFiles: TuiFileLike[] = [];
-        parsedFiles.forEach((fileObj) => {
-          const fakeFile: TuiFileLike = {
-            name: fileObj.name,
-            // size: 0,
-          };
-          // Добавим в Set
-          this.uploadedFiles.add({ file: fakeFile, src: fileObj.src });
-          // А также в список для controlFile
-          controlFiles.push(fakeFile);
-        });
+    // const savedFiles = localStorage.getItem(this.LS_KEY_FILES);
+    // if (savedFiles) {
+    //   try {
+    //     const parsedFiles = JSON.parse(savedFiles) as {
+    //       name: string;
+    //       src: string;
+    //     }[];
+    //     // Создадим массив "фиктивных" TuiFileLike
+    //     const controlFiles: TuiFileLike[] = [];
+    //     parsedFiles.forEach((fileObj) => {
+    //       const fakeFile: TuiFileLike = {
+    //         name: fileObj.name,
+    //         // size: 0,
+    //       };
+    //       // Добавим в Set
+    //       this.uploadedFiles.add({ file: fakeFile, src: fileObj.src });
+    //       // А также в список для controlFile
+    //       controlFiles.push(fakeFile);
+    //     });
 
-        if (controlFiles.length) {
-          this.controlFile.setValue(controlFiles);
+    //     if (controlFiles.length) {
+    //       this.controlFile.setValue(controlFiles);
 
-          // Добавьте небольшую задержку для активации изменений
-          setTimeout(() => {
-            this.controlFile.updateValueAndValidity();
-            this.cdr.markForCheck();
-          }, 100);
-        }
-      } catch {
-        // ignore
-      }
-    }
+    //       // Добавьте небольшую задержку для активации изменений
+    //       setTimeout(() => {
+    //         this.controlFile.updateValueAndValidity();
+    //         this.cdr.markForCheck();
+    //       }, 100);
+    //     }
+    //   } catch {
+    //     // ignore
+    //   }
+    // }
 
     // 4. Расчеты
     const savedCalculation = localStorage.getItem(this.LS_KEY_CALCULATION);

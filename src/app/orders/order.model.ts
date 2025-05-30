@@ -1,7 +1,10 @@
 export interface Service {
+parameters: any;
   uuid: string;
   title: string;
-  parameters: any[];
+  cost: number;
+  description?: string;
+  files?: string[] | null;
 }
 export interface Order {
   uuid: string;
@@ -10,7 +13,7 @@ export interface Order {
   paymentStatus: string;
   executionStatus: string;
   execution: Date;
-  paymentDate: Date;
+  created: Date;
   linkToGeoData: string;
   passwordForLink: string;
   comment: string;

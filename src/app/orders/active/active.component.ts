@@ -3,9 +3,12 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  Inject,
+  Injector,
   NgZone,
   OnInit,
   QueryList,
+  TemplateRef,
   ViewChild,
   ViewChildren,
 } from '@angular/core';
@@ -18,6 +21,7 @@ import {
   TuiDriver,
   TuiOptionComponent,
 } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
 import {
   Observable,
   Subscription,
@@ -30,6 +34,7 @@ import {
 import {
   EMPTY_QUERY,
   TUI_DEFAULT_MATCHER,
+  TUI_IS_MOBILE,
   TuiBooleanHandler,
   TuiContextWithImplicit,
   TuiDay,
@@ -37,10 +42,13 @@ import {
 import { StorageService } from '../../_services/storage.service';
 import {
   TUI_PROMPT,
+  TuiPdfViewerOptions,
+  TuiPdfViewerService,
   TuiPromptData,
   tuiItemsHandlersProvider,
 } from '@taiga-ui/kit';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { OrderDetailsDialogComponent } from '../order-details-dialog/order-details-dialog.component';
 
 @Component({
   selector: 'app-active',
@@ -102,6 +110,7 @@ export class ActiveComponent implements OnInit {
   private resizeSubscription!: Subscription;
 
   @ViewChild('tableContainer') tableContainer!: ElementRef;
+  @ViewChild('actions') private readonly actionsTpl!: TemplateRef<unknown>;
 
   constructor(
     private orderService: OrderService,
@@ -112,12 +121,49 @@ export class ActiveComponent implements OnInit {
     private dialogService: TuiDialogService,
     private alertService: TuiAlertService,
     private sanitizer: DomSanitizer,
+    private readonly injector: Injector,
+    @Inject(TuiPdfViewerService) private readonly pdfService: TuiPdfViewerService,
+    @Inject(TUI_IS_MOBILE) private readonly isMobile: boolean,
   ) {
     this.form = this.fb.group({
       selectedServices: [[]],
       selectedStatuses: [[]],
       dateRange: new FormControl(null),
       searchAll: new FormControl(''),
+    });
+  }
+
+
+showDetails(uuid: string): void {
+  this.orderService.getOrderDetails(uuid)
+    .pipe(take(1))
+    .subscribe(order => {
+      this.dialogService.open(
+        new PolymorpheusComponent(OrderDetailsDialogComponent, this.injector),
+        {
+          label: `Заказ №${order.orderNumber}`,
+          size: this.isMobile ? 'fullscreen' : 'l',
+          data: order,
+        }
+      ).subscribe();
+    });
+}
+
+
+  
+  showInvoice(orderUuid: string) {
+    this.orderService.getReceipt(orderUuid).pipe(take(1)).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+        this.pdfService.open(safe, {
+          label: `Счёт №${orderUuid}`,
+          actions: this.actionsTpl
+        }).subscribe();
+      },
+      error: err => {
+        console.error('Не удалось загрузить PDF счёта:', err);
+      }
     });
   }
 
@@ -138,8 +184,10 @@ export class ActiveComponent implements OnInit {
 
   public availableStatuses: Array<{ label: string; value: string }> = [
     { label: 'Готов', value: 'Ready' },
+    { label: 'Оплачено', value: 'Paid'},
     { label: 'В обработке', value: 'inProcessing' },
-    { label: 'Ждет оплаты', value: 'NotReady' },
+    { label: 'Ждёт оплаты', value: 'NotReady' },
+    { label: 'Отменённый', value: 'Cancelled' },
   ];
 
   public serviceSearch: string = '';
@@ -168,7 +216,6 @@ export class ActiveComponent implements OnInit {
   }
 
   ngOnInit() {
-
     this.fetchInitialData();
     this.initFormListeners();
 
@@ -180,19 +227,22 @@ export class ActiveComponent implements OnInit {
   }
 
   private fetchInitialData() {
-    this.orderService.getServiceTitles().pipe(take(1)).subscribe({
-      next: (services) => {
-        this.availableServices = services.map(service => ({
-          label: service.title,
-          value: service.uuid
-        }));
-        this.cdRef.markForCheck();
-      },
-      error: (error) => {
-        console.error('Ошибка при загрузке услуг:', error);
-        this.availableServices = [];
-      }
-    });
+    this.orderService
+      .getServiceTitles()
+      .pipe(take(1))
+      .subscribe({
+        next: (services) => {
+          this.availableServices = services.map((service) => ({
+            label: service.title,
+            value: service.uuid,
+          }));
+          this.cdRef.markForCheck();
+        },
+        error: (error) => {
+          console.error('Ошибка при загрузке услуг:', error);
+          this.availableServices = [];
+        },
+      });
 
     this.fetchOrders(this.currentPage);
   }
@@ -202,7 +252,6 @@ export class ActiveComponent implements OnInit {
       this.fetchOrders(this.currentPage);
     });
   }
-
 
   ngAfterViewInit() {
     // Подписываемся на изменение размеров окна
@@ -354,7 +403,7 @@ export class ActiveComponent implements OnInit {
                 paymentStatus: order.paymentStatus ? 'Оплачено' : 'Не оплачено',
                 executionStatus: this.mapStatus(order.executionStatus),
                 execution: new Date(order.execution),
-                paymentDate: new Date(order.paymentDate),
+                created: new Date(order.created),
                 linkToGeoData: order.linkToGeoData,
                 passwordForLink: order.passwordForLink,
                 comment: order.comment,
@@ -430,10 +479,14 @@ export class ActiveComponent implements OnInit {
     switch (status) {
       case 'Ready':
         return 'Готов';
+        case 'Paid':
+          return 'Оплачено';
       case 'inProcessing':
         return 'В обработке';
       case 'NotReady':
-        return 'Ждет оплаты';
+        return 'Ждёт оплаты';
+      case 'Cancelled':
+        return 'Отменённый';
       default:
         return status;
     }

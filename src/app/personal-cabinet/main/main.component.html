@@ -1,7 +1,7 @@
  <div class="personal-cabinet">
   <!-- Переключение типа клиента -->
   <div class="radio-group">
-    <tui-radio-block item="INDIVIDUAL" [(ngModel)]="clientType" required>
+    <tui-radio-block item="INDIVIDUALS" [(ngModel)]="clientType" required>
       Физическое лицо
     </tui-radio-block>
     <tui-radio-block item="ENTERPRISER" [(ngModel)]="clientType" required>
@@ -16,7 +16,7 @@
     <tui-scrollbar waIntersectionRoot class="scrollbar">
       <div style="max-height: 55vh;">
     <!-- Физическое лицо -->
-    <div class="form-section" *ngIf="clientType === 'INDIVIDUAL'">
+    <div class="form-section" *ngIf="clientType === 'INDIVIDUALS'">
       <h3>Информация для физического лица</h3>
       <tui-input formControlName="lastName">
         Фамилия

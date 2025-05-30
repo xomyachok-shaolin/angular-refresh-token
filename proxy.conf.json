@@ -1,12 +1,13 @@
-{
-  "/api": {
-    "target": "http://192.168.70.220:8888/api",
-    "secure": false,
-    "changeOrigin": true,
-    "pathRewrite": {
-      "^/api": ""
-    }
-  },
+  {
+    "/api": {
+      "target": "https://geokiosk.ru/api",
+      "secure": false,
+      "changeOrigin": true,
+      "pathRewrite": {
+        "^/api": ""
+      }
+    },
+  
   "/geoserver": {
     "target": "http://geoserver.usgik.ru:9090/geoserver/",
     "secure": false,

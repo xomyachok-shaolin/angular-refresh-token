@@ -137,4 +137,19 @@ export class OrderService {
       '/api/service/all/titles'
     );
   }
+  
+  getOrderDetails(uuid: string): Observable<Order> {
+    return this.http.get<Order>('/api/order/', {
+      params: new HttpParams().set('uuid', uuid),
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  getReceipt(orderUuid: string): Observable<Blob> {
+    const headers = this.getAuthHeaders();
+    return this.http.get(`/api/basket/api/receipts?order_uuid=${orderUuid}`, {
+      headers,
+      responseType: 'blob',
+    });
+  }
 }

@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
-import { Subscription, filter } from 'rxjs';
+import { BehaviorSubject, Subscription, filter } from 'rxjs';
 import { StorageService } from './_services/storage.service';
 import { AuthService } from './_services/auth.service';
 import { EventBusService } from './_shared/event-bus.service';
@@ -15,6 +15,8 @@ import { BasketService } from './_services/basket.service';
 })
 export class AppComponent {
   isServicesRoute: boolean = false;
+  basketItemCount: number = 0;
+  private basketItemCountSubscription: Subscription = Subscription.EMPTY;
 
   private roles: string[] = [];
 
@@ -32,8 +34,6 @@ export class AppComponent {
   eventBusSub?: Subscription;
   dropdownOpen = false;
   private closeDropdownTimer: any;
-
-  basketItemCount: number = 0;
 
   constructor(
     private readonly storageService: StorageService,
@@ -77,7 +77,13 @@ export class AppComponent {
   ngOnInit(): void {
     this.checkLoginState();
 
-    this.getBasketItemCount();
+    this.basketItemCountSubscription = this.basketService.basketItemCount$.subscribe(
+      (count) => {
+        this.basketItemCount = count;
+        this.cdr.detectChanges();
+      }
+    );
+    this.basketService.getBasketItemCount();
 
     this.eventBusSub = this.eventBusService.on('logout', () => {
       this.logout();
@@ -87,6 +93,13 @@ export class AppComponent {
       this.checkLoginState();
       this.cdr.detectChanges();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.basketItemCountSubscription.unsubscribe();
+    if (this.eventBusSub) {
+      this.eventBusSub.unsubscribe();
+    }
   }
 
   toggleDropdown(open: boolean): void {
@@ -135,21 +148,5 @@ export class AppComponent {
   get isHomeRoute() {
     // Checks if the current route is '/login'
     return this.router.url === '/home';
-  }
-
-  getBasketItemCount(): void {
-    if (this.isLoggedIn) {
-      this.basketService.getBasket().subscribe(
-        (data) => {
-          if (data && data.services) {
-            this.basketItemCount = data.services.length;
-            this.cdr.detectChanges();
-          }
-        },
-        (error) => {
-          console.error(error);
-        }
-      );
-    }
   }
 }

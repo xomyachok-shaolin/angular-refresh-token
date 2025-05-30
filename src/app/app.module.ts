@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { TUI_LANGUAGE, TUI_RUSSIAN_LANGUAGE } from '@taiga-ui/i18n';
+import { TUI_LANGUAGE, TUI_RUSSIAN_LANGUAGE, TuiLanguage } from '@taiga-ui/i18n';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
 import {
   BrowserAnimationsModule,
@@ -80,11 +80,13 @@ import {
   TuiInputInlineModule,
   TuiInputPhoneModule,
   TUI_VALIDATION_ERRORS,
+  TuiPdfViewerModule,
 } from '@taiga-ui/kit';
 import {
   TuiDropdownMobileModule,
   TuiTabBarModule,
 } from '@taiga-ui/addon-mobile';
+import { PolymorpheusModule }       from '@tinkoff/ng-polymorpheus';
 import { TuiSurfaceModule } from '@taiga-ui/experimental';
 import { TuiMoneyModule } from '@taiga-ui/addon-commerce';
 import { PersonalCabinetComponent } from './personal-cabinet/personal-cabinet.component';
@@ -109,15 +111,26 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
 import { BasketComponent } from './basket/basket.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ConfigService } from './config.service';
+import { OrderDetailsDialogComponent } from './orders/order-details-dialog/order-details-dialog.component';
+import { PolygonViewerComponent } from './orders/order-details-dialog/polygon-viewer.component';
 
 export function initializeApp(configService: ConfigService) {
   return () => configService.loadConfig();
 }
 
+// Создаем «кастомную» копию русского языка:
+const TUI_RUSSIAN_LANGUAGE_CUSTOM: TuiLanguage = {
+  ...TUI_RUSSIAN_LANGUAGE,
+  digitalInformationUnits: ['Б', 'КБ', 'МБ'], // вместо B, KiB, MiB
+};
+
+
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
+    OrderDetailsDialogComponent,
+    PolygonViewerComponent,
     RegisterComponent,
     HomeComponent,
     ProfileComponent,
@@ -138,12 +151,14 @@ export function initializeApp(configService: ConfigService) {
     BasketComponent,
   ],
   imports: [
+    PolymorpheusModule,
     BrowserModule,
     AppRoutingModule,
     FormsModule,
     HttpClientModule,
     BrowserAnimationsModule,
     TuiErrorModule,
+    TuiPdfViewerModule,
     TuiAccordionModule,
     TuiIslandModule,
     TuiCheckboxLabeledModule,
@@ -220,7 +235,7 @@ export function initializeApp(configService: ConfigService) {
     },
     {
       provide: TUI_LANGUAGE,
-      useValue: of(TUI_RUSSIAN_LANGUAGE),
+      useValue: of(TUI_RUSSIAN_LANGUAGE_CUSTOM),
     },
     {
       provide: TUI_VALIDATION_ERRORS,
@@ -240,7 +255,7 @@ export function initializeApp(configService: ConfigService) {
       useFactory: initializeApp,
       deps: [ConfigService],
       multi: true
-    }
+    },
   ],
   bootstrap: [AppComponent],
 })

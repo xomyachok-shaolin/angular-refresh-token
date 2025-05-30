@@ -6,7 +6,7 @@ import { TuiAlertService, TuiNotification } from '@taiga-ui/core';
 import { StorageService } from '../../_services/storage.service';
 import { ConfigService } from '../../config.service';
 
-export type ClientType = 'INDIVIDUAL' | 'ENTERPRISER' | 'LEGAL';
+export type ClientType = 'INDIVIDUALS' | 'ENTERPRISER' | 'LEGAL';
  
 @Component({
   selector: 'main',
@@ -19,7 +19,7 @@ export class MainComponent implements OnInit {
   enterpriserForm: FormGroup;
   legalForm: FormGroup;
   // Текущий тип клиента (для переключения)
-  clientType: ClientType = 'INDIVIDUAL';
+  clientType: ClientType = 'INDIVIDUALS';
 
   isLoading = false;
   // Сохраняем исходное значение формы для последующего сравнения
@@ -211,7 +211,7 @@ export class MainComponent implements OnInit {
   // Метод для выбора текущей формы в зависимости от clientType
   getCurrentForm(): FormGroup {
     switch (this.clientType) {
-      case 'INDIVIDUAL':
+      case 'INDIVIDUALS':
         return this.individualForm;
       case 'ENTERPRISER':
         return this.enterpriserForm;
@@ -232,11 +232,11 @@ export class MainComponent implements OnInit {
     this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe({
       next: (data) => {
         // Определяем тип клиента из данных
-        this.clientType = data.clientType || 'INDIVIDUAL';
+        this.clientType = data.clientType || 'INDIVIDUALS';
         // Заполняем нужную форму
-        if (this.clientType === 'INDIVIDUAL') {
+        if (this.clientType === 'INDIVIDUALS') {
           this.individualForm.patchValue({
-            clientType: data.clientType || 'INDIVIDUAL',
+            clientType: data.clientType || 'INDIVIDUALS',
             lastName: data.lastName || '',
             firstName: data.firstName || '',
             middleName: data.middleName || '',
@@ -397,7 +397,7 @@ export class MainComponent implements OnInit {
   // Автодополнение DaData для банка
   onBankInput(query: string): void {
     const type = this.clientType;
-    if (!query || !query.trim() || type === 'INDIVIDUAL') {
+    if (!query || !query.trim() || type === 'INDIVIDUALS') {
       this.bankSuggestions = [];
       this.showBankSuggestions = false;
       return;

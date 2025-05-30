@@ -118,17 +118,17 @@
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
-            {{ order.execution | date : "dd.MM.yyyy" }}
+            {{ order.created | date : "dd.MM.yyyy" }}
           </td>
           <td class="tui-table__td tui-table__td_align_center"
           [tuiHighlight]="this.form.value.searchAll"
           [tuiHighlightColor]="'#228B22'">
             <div
               [class]="{
-                completed: order.executionStatus === 'Готов',
+                completed: order.executionStatus === 'Готов' || order.executionStatus === 'Оплачено',
                 processing: order.executionStatus === 'В обработке',
-                denied: order.executionStatus === 'Ждет оплаты',
-                basket: order.executionStatus === 'В корзине'
+                basket: order.executionStatus === 'Ждёт оплаты',
+                denied: order.executionStatus === 'Отменённый'
               }"
             >
               {{ order.executionStatus }}
@@ -159,14 +159,17 @@
             </tui-hosted-dropdown>
             <ng-template #menuContent>
               <tui-data-list size="m">
-                <button tuiOption>Подробнее о заказе</button>
-                <button tuiOption>Скачать счет</button>
+                <button tuiOption (click)="showDetails(order.uuid)">Подробнее о заказе</button>
+                <button tuiOption (click)="showInvoice(order.uuid)">Скачать счет</button>
                 <button tuiOption (click)="unarchiveSelectedOrder(order.uuid)">
                   Вернуть из архива
                 </button> 
                 <button tuiOption>Удалить заказ</button>
               </tui-data-list>
             </ng-template>
+            <ng-template #actions let-content="content">
+              <a download tuiButton [size]="'m'" [href]="content">Скачать</a>
+            </ng-template>  
           </td>
         </tr>
       </tbody>

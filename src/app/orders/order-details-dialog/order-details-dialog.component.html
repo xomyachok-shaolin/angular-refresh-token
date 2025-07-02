@@ -21,8 +21,8 @@
 </div>
 
 <!-- Сервис(ы) -->
-<tui-accordion [closeOthers]="false" class="services-accordion">
-  <tui-accordion-item *ngFor="let svc of order.service">
+<tui-accordion class="services-accordion">
+  <tui-accordion-item [open]="true" *ngFor="let svc of order.service">
     <div class="svc-header">
       <strong>{{ svc.title }}</strong>
     </div>

@@ -42,7 +42,7 @@ export class BasketService {
 
   getReceiptPdf(orderUuid: string): Observable<Blob> {
     const headers = this.getAuthHeaders();
-    return this.http.get(`/api/basket/api/receipts?order_uuid=${orderUuid}`, {
+    return this.http.get(`/api/basket/receipts?order_uuid=${orderUuid}`, {
       headers,
       responseType: 'blob',
     });

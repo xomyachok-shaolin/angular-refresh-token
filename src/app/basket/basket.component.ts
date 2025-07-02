@@ -4,6 +4,8 @@ import {
   ChangeDetectorRef,
   ViewChild,
   ElementRef,
+  Inject,
+  TemplateRef,
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -15,9 +17,17 @@ import {
 import { StorageService } from '../_services/storage.service';
 import { BasketService } from '../_services/basket.service';
 import { Router } from '@angular/router';
-import { switchMap, of, forkJoin } from 'rxjs';
-import { TUI_PROMPT, TuiFileLike, TuiPromptData } from '@taiga-ui/kit';
+import { switchMap, of, forkJoin, take, map, delay } from 'rxjs';
+import {
+  TUI_PROMPT,
+  TuiFileLike,
+  TuiPdfViewerService,
+  TuiPromptData,
+} from '@taiga-ui/kit';
 import { ConfigService } from '../config.service';
+import { TUI_IS_MOBILE } from '@taiga-ui/cdk';
+import { DomSanitizer } from '@angular/platform-browser';
+import { OrderService } from '../_services/order.service';
 
 export type ClientType = 'INDIVIDUALS' | 'ENTERPRISER' | 'LEGAL';
 
@@ -44,8 +54,10 @@ export class BasketComponent implements OnInit {
   hasBasket = false;
   totalAmount = 0;
 
+  @ViewChild('actionsTpl') actionsTpl!: TemplateRef<unknown>;
   orderUuid: string = '';
-receiptPdfUrl: string = '';
+  orderNumber: string = '';
+  receiptPdfUrl: string = '';
 
   // Для каждого типа клиента своя форма
   individualForm: FormGroup;
@@ -79,7 +91,12 @@ receiptPdfUrl: string = '';
     private alertService: TuiAlertService,
     private configService: ConfigService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer,
+    @Inject(TuiPdfViewerService)
+    private readonly pdfService: TuiPdfViewerService,
+    @Inject(TUI_IS_MOBILE) private readonly isMobile: boolean,
+    private orderService: OrderService,
   ) {
     // Форма для физического лица
     this.individualForm = this.fb.group({
@@ -303,7 +320,7 @@ receiptPdfUrl: string = '';
       return;
     }
 
-  const allSelected = selectedUuids.length === this.basketData.length;
+    const allSelected = selectedUuids.length === this.basketData.length;
 
     const data: TuiPromptData = {
       content: 'Вы уверены, что хотите удалить выбранные услуги из корзины?',
@@ -318,13 +335,16 @@ receiptPdfUrl: string = '';
         data,
       })
       .pipe(
-        switchMap(confirmed => {
+        switchMap((confirmed) => {
           if (confirmed) {
-            return this.basketService.deleteServices(selectedUuids, allSelected);
+            return this.basketService.deleteServices(
+              selectedUuids,
+              allSelected
+            );
           } else {
             return of(null);
           }
-        })  
+        })
       )
       .subscribe({
         next: (response) => {
@@ -372,6 +392,7 @@ receiptPdfUrl: string = '';
           this.hasBasket = true;
           this.basketData = data.services.map((service: any) => ({
             uuid: service.uuid,
+            basketUuid: service.uuid_basket,
             title: service.title,
             description: service.description,
             parameters: service.parameters,
@@ -507,49 +528,72 @@ receiptPdfUrl: string = '';
       });
   }
 
+  // basket.component.ts
+  showReceipt(orderUuid: string): void {
+    this.basketService
+      .getReceiptPdf(orderUuid)
+      .pipe(take(1))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+          this.pdfService
+            .open(safe, {
+              label: `Счёт №${orderUuid}`,
+              actions: this.actionsTpl,
+            })
+            .subscribe();
+        },
+        error: (err) => {
+          console.error('Не удалось загрузить PDF счёта:', err);
+          this.alertService
+            .open('Не удалось загрузить счёт', { status: 'error' })
+            .subscribe();
+        },
+      });
+  }
+
   placeOrder(): void {
-    const currentForm = this.getCurrentForm();
-    if (currentForm.invalid) {
-      this.alertService.open('Проверьте правильность заполнения полей', {
-        status: TuiNotification.Error,
-      }).subscribe();
-      return;
-    }
-  
-    const selectedServices = this.basketData
-      .filter(item => item.selected)
-      .map(item => item.uuid);
-  
-    if (!selectedServices.length) {
-      this.alertService.open('Выберите хотя бы одну услугу', {
-        status: TuiNotification.Warning,
-      }).subscribe();
-      return;
-    }
-  
-    const orderPayload = {
-      input_str_services_uuids: selectedServices,
-      organizationDtoInput: currentForm.value,
+    const payload = {
+      services_uuids: this.basketData.filter(i => i.selected).map(i => i.basketUuid),
+      dtoInput:       this.getCurrentForm().value,
+      clientType:     this.clientType,
     };
   
-    this.basketService.createOrder(orderPayload).pipe(
-      switchMap((uuid: string) => {
+    this.basketService.createOrder(payload).pipe(
+      // 1) достаём чистый UUID
+      map((msg: string) => msg.split(':')[1].trim()),
+      delay(300),
+      // 2) сохраняем UUID и запрашиваем детали заказа
+      switchMap(uuid => {
         this.orderUuid = uuid;
-        return this.basketService.getReceiptPdf(uuid);
+        return this.orderService.getOrderDetails(uuid);
+      }),
+      // 3) сохраняем бизнес-номер и загружаем PDF
+      switchMap(order => {
+        this.orderNumber = order.orderNumber;
+        return this.basketService.getReceiptPdf(this.orderUuid);
       })
     ).subscribe({
-      next: (pdfBlob) => {
-        this.receiptPdfUrl = URL.createObjectURL(pdfBlob);
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+        this.pdfService.open(safe, {
+          label: `Счёт №${this.orderNumber}`,
+          actions: this.actionsTpl,
+        }).subscribe();
+  
+        // очищаем корзину и обновляем счётчик
         this.currentStep = 2;
         this.basketData = [];
         this.totalAmount = 0;
+        this.basketService.getBasketItemCount();
       },
-      error: (err) => {
-        console.error('Ошибка при создании заказа или загрузке чека:', err);
-        this.alertService.open('Ошибка оформления заказа', {
-          status: TuiNotification.Error,
-        }).subscribe();
-      },
+      error: err => {
+        console.error(err);
+        this.alertService.open('Ошибка оформления заказа', { status: 'error' }).subscribe();
+      }
     });
   }
   

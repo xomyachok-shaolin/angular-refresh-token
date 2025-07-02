@@ -336,18 +336,22 @@
     </form>
   </div>
 
-  <!-- Шаг 3: Подтверждение заказа -->
-<div *ngSwitchCase="2">
-  <h2>Подтверждение заказа</h2>
-  <p>Ваш заказ успешно оформлен!</p>
-
-  <ng-container *ngIf="receiptPdfUrl">
-    <!-- <tui-pdf-viewer
-      [src]="receiptPdfUrl"
-      [showLoader]="true"
-      style="height: 70vh; border: 1px solid #ccc;"
-    ></tui-pdf-viewer> -->
-  </ng-container>
-
-  <button tuiButton (click)="goHome()">На главную</button>
+<div *ngSwitchCase="2" class="confirmation-wrapper">
+  <div class="confirmation-box">
+    <div class="confirmation-icon">
+      <tui-svg src="tuiIconCheckLarge" size="6xl"></tui-svg>
+    </div>
+    <h2 class="confirmation-title">Спасибо за заказ!</h2>
+    <p class="confirmation-text">
+      Ваш заказ № <strong>{{ orderNumber }}</strong><br />
+      успешно оформлен.
+    </p>
+    <div class="confirmation-actions">
+      <button tuiButton appearance="primary" (click)="goHome()">На главную</button>
+    </div>
+  </div>
 </div>
+
+<ng-template #actionsTpl let-content="content">
+  <a download tuiButton size="m" [href]="content">Скачать</a>
+</ng-template>

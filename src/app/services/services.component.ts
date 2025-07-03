@@ -1533,43 +1533,45 @@ export class ServicesComponent implements OnInit, OnDestroy {
   }
 
   makeRequest(file: TuiFileLike): Observable<TuiFileLike | null> {
-    if (Array.from(this.uploadedFiles).some((item) => item.file === file)) {
+    // Если файл уже загружен — сразу возвращаем его
+    if (Array.from(this.uploadedFiles).some(item => item.file === file)) {
       return of(file);
     }
-
+  
+    // Добавляем файл в список загружаемых
     this.loadingFiles.next([...this.loadingFiles.getValue(), file]);
-
+  
     const formData = new FormData();
     formData.append('file', file as unknown as File, file.name);
-
+  
     return this.http
       .post('/api/file/upload', formData, { responseType: 'text' })
       .pipe(
-        tap({
-          error: () => this.onReject(file), // Обработка ошибок через tap
-        }),
-        map((response) => {
-          if (
-            typeof response === 'string' &&
-            response.includes('File uploaded')
-          ) {
-            const fileName = response.split(':')[1].trim();
+        // При ошибке загрузки снимаем файл
+        tap({ error: () => this.onReject(file) }),
+        // Парсим ответ сервера на русскоязычное сообщение "Уникальное имя: ..."
+        map((response: string) => {
+          const match = response.match(/Уникальное имя:\s*([^\s]+)/);
+          if (match) {
+            const fileName = match[1]; // e.g. "1751538313606_dGVzdE1pc3Npb25fMjkzNA"
             const src = `/api/file/download_temporaryBucket?fileName=${fileName}`;
             this.uploadedFiles.add({ file, src });
             return file;
           }
+          // Если не удалось распознать — отклоняем файл
           this.onReject(file);
           return null;
         }),
+        // После завершения (успех или ошибка) убираем из списка загрузки и сохраняем состояние
         finalize(() => {
           this.loadingFiles.next(
-            this.loadingFiles.getValue().filter((f) => f !== file)
+            this.loadingFiles.getValue().filter(f => f !== file)
           );
-          // === LOCAL STORAGE CHANGES
           this.saveDataToLocalStorage();
         })
       );
   }
+  
 
   // ========================
   //   LOCAL STORAGE

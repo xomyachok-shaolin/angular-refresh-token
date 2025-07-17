@@ -2,7 +2,8 @@
 <tui-stepper *ngIf="hasBasket" [(activeItemIndex)]="currentStep">
   <button tuiStep stepState="pass">Состав заказа</button>
   <button tuiStep [disabled]="!anySelected">Оформление заказа</button>
-  <button tuiStep [disabled]="currentStep === 0 || getCurrentForm().invalid" (click)="placeOrder()">Подтверждение
+  <button tuiStep [disabled]="currentStep === 0 || this.orderForm.get('data')!.invalid"
+    (click)="placeOrder()">Подтверждение
     заказа</button>
 </tui-stepper>
 
@@ -93,265 +94,279 @@
   </div>
 
   <!-- Шаг 2: Оформление заказа -->
+  <!-- ШАГ 2. ОФОРМЛЕНИЕ ЗАКАЗА -->
   <div class="placing-order" *ngSwitchCase="1">
-    <!-- Выбор типа клиента -->
-    <div class="radio-group">
-      <tui-radio-block item="INDIVIDUALS" [(ngModel)]="clientType" required>
-        Физическое лицо
-      </tui-radio-block>
-      <tui-radio-block item="ENTERPRISER" [(ngModel)]="clientType" required>
-        Индивидуальный предприниматель
-      </tui-radio-block>
-      <tui-radio-block item="LEGAL" [(ngModel)]="clientType" required>
-        Юридическое лицо
-      </tui-radio-block>
-    </div>
+    <!-- Корневая форма -->
+    <form [formGroup]="orderForm" (ngSubmit)="placeOrder()">
 
+      <!-- 1. Радио‑селектор типа клиента -->
+      <div class="radio-group">
+        <tui-radio-block item="INDIVIDUALS" formControlName="clientType">
+          Физическое лицо
+        </tui-radio-block>
+        <tui-radio-block item="ENTERPRISER" formControlName="clientType">
+          Индивидуальный предприниматель
+        </tui-radio-block>
+        <tui-radio-block item="LEGAL" formControlName="clientType">
+          Юридическое лицо
+        </tui-radio-block>
+      </div>
 
-    <form [formGroup]="getCurrentForm()" (ngSubmit)="placeOrder()">
+      <!-- 2. Поля активной под‑формы -->
       <tui-scrollbar waIntersectionRoot class="scrollbar">
-        <div style="max-height: 55vh;">
+        <div style="max-height: 55vh;" formGroupName="data">
+          <ng-container [ngSwitch]="orderForm.get('clientType')!.value">
 
-          <!-- Физическое лицо -->
-          <div class="form-section" *ngIf="clientType === 'INDIVIDUALS'">
-            <h3>Информация для физического лица</h3>
-            <tui-input formControlName="lastName">
-              Фамилия
-              <input tuiTextfield placeholder="Введите фамилию" />
-            </tui-input>
-            <tui-error formControlName="lastName" [error]="[] | tuiFieldError | async"></tui-error>
+            <!-- ---------- Ф И З И Ч Е С К О Е  Л И Ц О ---------- -->
+            <ng-container *ngSwitchCase="'INDIVIDUALS'">
+              <h3>Информация для физического лица</h3>
 
-            <tui-input formControlName="firstName">
-              Имя
-              <input tuiTextfield placeholder="Введите имя" />
-            </tui-input>
-            <tui-error formControlName="firstName" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="lastName">
+                Фамилия
+                <input tuiTextfield placeholder="Введите фамилию" />
+              </tui-input>
+              <tui-error formControlName="lastName" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="middleName">
-              Отчество
-              <input tuiTextfield placeholder="Введите отчество (необязательно)" />
-            </tui-input>
+              <tui-input formControlName="firstName">
+                Имя
+                <input tuiTextfield placeholder="Введите имя" />
+              </tui-input>
+              <tui-error formControlName="firstName" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input-phone formControlName="phone">
-              Телефон
-              <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
-            </tui-input-phone>
-            <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="middleName">
+                Отчество
+                <input tuiTextfield placeholder="Введите отчество (необязательно)" />
+              </tui-input>
 
-            <tui-input formControlName="email">
-              Электронная почта
-              <input tuiTextfield placeholder="Введите email" />
-            </tui-input>
-            <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
-          </div>
+              <tui-input-phone formControlName="phone">
+                Телефон
+                <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
+              </tui-input-phone>
+              <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
 
-          <!-- Индивидуальный предприниматель -->
-          <div class="form-section" *ngIf="clientType === 'ENTERPRISER'">
-            <h3>Информация для индивидуального предпринимателя</h3>
-            <tui-input formControlName="lastName">
-              Фамилия
-              <input tuiTextfield placeholder="Введите фамилию" />
-            </tui-input>
-            <tui-error formControlName="lastName" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="email">
+                Электронная почта
+                <input tuiTextfield placeholder="Введите email" />
+              </tui-input>
+              <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
+            </ng-container>
 
-            <tui-input formControlName="firstName">
-              Имя
-              <input tuiTextfield placeholder="Введите имя" />
-            </tui-input>
-            <tui-error formControlName="firstName" [error]="[] | tuiFieldError | async"></tui-error>
+            <!-- ---------- И П ---------- -->
+            <ng-container *ngSwitchCase="'ENTERPRISER'">
+              <h3>Информация для индивидуального предпринимателя</h3>
 
-            <tui-input formControlName="middleName">
-              Отчество
-              <input tuiTextfield placeholder="Введите отчество (необязательно)" />
-            </tui-input>
+              <!-- ФИО + контакты (тот же порядок) -->
+              <tui-input formControlName="lastName">
+                Фамилия
+                <input tuiTextfield placeholder="Введите фамилию" />
+              </tui-input>
+              <tui-error formControlName="lastName" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input-phone formControlName="phone">
-              Телефон
-              <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
-            </tui-input-phone>
-            <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="firstName">
+                Имя
+                <input tuiTextfield placeholder="Введите имя" />
+              </tui-input>
+              <tui-error formControlName="firstName" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="email">
-              Электронная почта
-              <input tuiTextfield placeholder="Введите email" />
-            </tui-input>
-            <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="middleName">
+                Отчество
+                <input tuiTextfield placeholder="Введите отчество (необязательно)" />
+              </tui-input>
 
-            <tui-input formControlName="inn">
-              ИНН / Поиск
-              <input tuiTextfield placeholder="Введите часть ИНН, ОГРНИП и адреса для автопоиска"
-                (input)="onCompanyNameInput($any($event.target).value)" />
-            </tui-input>
-            <tui-error formControlName="inn" [error]="[] | tuiFieldError | async"></tui-error>
-            <!-- Подсказки DaData для ИНН -->
-            <ul class="suggestions" *ngIf="showCompanySuggestions && companySuggestions.length">
-              <li *ngFor="let sugg of companySuggestions" (click)="selectCompanySuggestion(sugg)">
-                <tui-tag [hoverable]="true" [autoColor]="true" [value]="sugg.value">
-                </tui-tag>
-              </li>
-            </ul>
+              <tui-input-phone formControlName="phone">
+                Телефон
+                <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
+              </tui-input-phone>
+              <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="ogrnip">
-              ОГРНИП
-              <input tuiTextfield placeholder="15 цифр" />
-            </tui-input>
-            <tui-error formControlName="ogrnip" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="email">
+                Электронная почта
+                <input tuiTextfield placeholder="Введите email" />
+              </tui-input>
+              <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="registrationAddress">
-              Адрес регистрации
-              <input tuiTextfield placeholder="Введите адрес регистрации" />
-            </tui-input>
-            <tui-error formControlName="registrationAddress" [error]="[] | tuiFieldError | async"></tui-error>
+              <!-- Поиск компании по ИНН / ОГРНИП -->
+              <tui-input formControlName="inn">
+                ИНН / Поиск
+                <input tuiTextfield placeholder="Введите часть ИНН или названия"
+                  (input)="onCompanyNameInput($any($event.target).value)" />
+              </tui-input>
+              <tui-error formControlName="inn" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="checkingAccount">
-              Расчетный счет
-              <input tuiTextfield placeholder="20 цифр" />
-            </tui-input>
-            <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
-          </div>
+              <ul class="suggestions" *ngIf="showCompanySuggestions && companySuggestions.length">
+                <li *ngFor="let s of companySuggestions" (click)="selectCompanySuggestion(s)">
+                  <tui-tag [value]="s.value" [hoverable]="true" [autoColor]="true"></tui-tag>
+                </li>
+              </ul>
 
-          <!-- Юридическое лицо -->
-          <div class="form-section" *ngIf="clientType === 'LEGAL'">
-            <h3>Информация для юридического лица</h3>
-            <tui-input formControlName="fullNameOrganization">
-              Полное наименование организации / Поиск
-              <input tuiTextfield placeholder="Введите часть ИНН, ОГРН, названия и адреса для автопоиска"
-                (input)="onCompanyNameInput($any($event.target).value)" />
-            </tui-input>
-            <tui-error formControlName="fullNameOrganization" [error]="[] | tuiFieldError | async"></tui-error>
-            <!-- Подсказки DaData для наименования -->
-            <ul class="suggestions" *ngIf="showCompanySuggestions && companySuggestions.length">
-              <li *ngFor="let sugg of companySuggestions" (click)="selectCompanySuggestion(sugg)">
-                <tui-tag [hoverable]="true" [autoColor]="true" [value]="sugg.value">
-                </tui-tag>
-              </li>
-            </ul>
+              <tui-input formControlName="ogrnip">
+                ОГРНИП
+                <input tuiTextfield placeholder="15 цифр" />
+              </tui-input>
+              <tui-error formControlName="ogrnip" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="abbreviatedNameOrganization">
-              Сокращенное наименование
-              <input tuiTextfield placeholder="Введите сокращенное наименование" />
-            </tui-input>
-            <tui-error formControlName="abbreviatedNameOrganization" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="registrationAddress">
+                Адрес регистрации
+                <input tuiTextfield placeholder="Введите адрес регистрации" />
+              </tui-input>
+              <tui-error formControlName="registrationAddress" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="inn">
-              ИНН
-              <input tuiTextfield placeholder="Введите ИНН" />
-            </tui-input>
-            <tui-error formControlName="inn" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="checkingAccount">
+                Расчетный счет
+                <input tuiTextfield placeholder="20 цифр" />
+              </tui-input>
+              <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
+            </ng-container>
 
-            <tui-input formControlName="kpp">
-              КПП
-              <input tuiTextfield placeholder="9 цифр" />
-            </tui-input>
-            <tui-error formControlName="kpp" [error]="[] | tuiFieldError | async"></tui-error>
+            <!-- ---------- Ю Р Л И Ц О ---------- -->
+            <ng-container *ngSwitchCase="'LEGAL'">
+              <h3>Информация для юридического лица</h3>
 
-            <tui-input formControlName="ogrn">
-              ОГРН
-              <input tuiTextfield placeholder="13 цифр" />
-            </tui-input>
-            <tui-error formControlName="ogrn" [error]="[] | tuiFieldError | async"></tui-error>
+              <!-- Поиск по наименованию / ИНН / ОГРН -->
+              <tui-input formControlName="fullNameOrganization">
+                Полное наименование организации / Поиск
+                <input tuiTextfield placeholder="Введите часть ИНН, ОГРН, названия и адреса для автопоиска"
+                  (input)="onCompanyNameInput($any($event.target).value)" />
+              </tui-input>
+              <tui-error formControlName="fullNameOrganization" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="okpo">
-              ОКПО
-              <input tuiTextfield placeholder="8 цифр" />
-            </tui-input>
-            <tui-error formControlName="okpo" [error]="[] | tuiFieldError | async"></tui-error>
+              <ul class="suggestions" *ngIf="showCompanySuggestions && companySuggestions.length">
+                <li *ngFor="let s of companySuggestions" (click)="selectCompanySuggestion(s)">
+                  <tui-tag [value]="s.value" [hoverable]="true" [autoColor]="true"></tui-tag>
+                </li>
+              </ul>
 
-            <tui-input formControlName="legalAddress">
-              Юридический адрес
-              <input tuiTextfield placeholder="Введите юридический адрес" />
-            </tui-input>
-            <tui-error formControlName="legalAddress" [error]="[] | tuiFieldError | async"></tui-error>
+              <!-- Порядок полей ровно как в оригинале -->
+              <tui-input formControlName="abbreviatedNameOrganization">
+                Сокращенное наименование
+                <input tuiTextfield placeholder="Введите сокращенное наименование" />
+              </tui-input>
+              <tui-error formControlName="abbreviatedNameOrganization" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input-phone formControlName="phone">
-              Телефон
-              <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
-            </tui-input-phone>
-            <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="inn">
+                ИНН
+                <input tuiTextfield placeholder="Введите ИНН" />
+              </tui-input>
+              <tui-error formControlName="inn" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="email">
-              Электронная почта
-              <input tuiTextfield placeholder="Введите email" />
-            </tui-input>
-            <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="kpp">
+                КПП
+                <input tuiTextfield placeholder="9 цифр" />
+              </tui-input>
+              <tui-error formControlName="kpp" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="fax">
-              Факс
-              <input tuiTextfield placeholder="Введите номер факса (необязательно)" />
-            </tui-input>
+              <tui-input formControlName="ogrn">
+                ОГРН
+                <input tuiTextfield placeholder="13 цифр" />
+              </tui-input>
+              <tui-error formControlName="ogrn" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="website">
-              Сайт
-              <input tuiTextfield placeholder="Введите адрес сайта (необязательно)" />
-            </tui-input>
+              <tui-input formControlName="okpo">
+                ОКПО
+                <input tuiTextfield placeholder="8 цифр" />
+              </tui-input>
+              <tui-error formControlName="okpo" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="bankName">
-              Наименование банка / Поиск
-              <input tuiTextfield placeholder="Введите банк или БИК для автопоиска"
-                (input)="onBankInput($any($event.target).value)" />
-            </tui-input>
-            <tui-error formControlName="bankName" [error]="[] | tuiFieldError | async"></tui-error>
-            <!-- Подсказки DaData для банка -->
-            <ul class="suggestions" *ngIf="showBankSuggestions && bankSuggestions.length">
-              <li *ngFor="let bank of bankSuggestions" (click)="selectBankSuggestion(bank)">
-                <tui-tag [hoverable]="true" [autoColor]="true" [value]="bank.value">
-                </tui-tag>
-              </li>
-            </ul>
+              <tui-input formControlName="legalAddress">
+                Юридический адрес
+                <input tuiTextfield placeholder="Введите юридический адрес" />
+              </tui-input>
+              <tui-error formControlName="legalAddress" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="bic">
-              БИК
-              <input tuiTextfield placeholder="9 цифр" />
-            </tui-input>
-            <tui-error formControlName="bic" [error]="[] | tuiFieldError | async"></tui-error>
+              <!-- Контакты руководителя -->
+              <tui-input-phone formControlName="phone">
+                Телефон
+                <input tuiTextfield placeholder="Введите телефон" autocomplete="tel" />
+              </tui-input-phone>
+              <tui-error formControlName="phone" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="correspondentAccount">
-              Корреспондентский счет
-              <input tuiTextfield placeholder="20 цифр" />
-            </tui-input>
-            <tui-error formControlName="correspondentAccount" [error]="[] | tuiFieldError | async"></tui-error>
+              <tui-input formControlName="email">
+                Электронная почта
+                <input tuiTextfield placeholder="Введите email" />
+              </tui-input>
+              <tui-error formControlName="email" [error]="[] | tuiFieldError | async"></tui-error>
 
-            <tui-input formControlName="checkingAccount">
-              Расчетный счет
-              <input tuiTextfield placeholder="20 цифр" />
-            </tui-input>
-            <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
-          </div>
+              <tui-input formControlName="fax">
+                Факс
+                <input tuiTextfield placeholder="Введите номер факса (необязательно)" />
+              </tui-input>
 
+              <tui-input formControlName="website">
+                Сайт
+                <input tuiTextfield placeholder="Введите адрес сайта (необязательно)" />
+              </tui-input>
+
+              <!-- Поиск банка -->
+              <tui-input formControlName="bankName">
+                Наименование банка / Поиск
+                <input tuiTextfield placeholder="Введите банк или БИК"
+                  (input)="onBankInput($any($event.target).value)" />
+              </tui-input>
+              <tui-error formControlName="bankName" [error]="[] | tuiFieldError | async"></tui-error>
+
+              <ul class="suggestions" *ngIf="showBankSuggestions && bankSuggestions.length">
+                <li *ngFor="let b of bankSuggestions" (click)="selectBankSuggestion(b)">
+                  <tui-tag [value]="b.value" [hoverable]="true" [autoColor]="true"></tui-tag>
+                </li>
+              </ul>
+
+              <tui-input formControlName="bic">
+                БИК
+                <input tuiTextfield placeholder="9 цифр" />
+              </tui-input>
+              <tui-error formControlName="bic" [error]="[] | tuiFieldError | async"></tui-error>
+
+              <tui-input formControlName="correspondentAccount">
+                Корреспондентский счет
+                <input tuiTextfield placeholder="20 цифр" />
+              </tui-input>
+              <tui-error formControlName="correspondentAccount" [error]="[] | tuiFieldError | async"></tui-error>
+
+              <tui-input formControlName="checkingAccount">
+                Расчетный счет
+                <input tuiTextfield placeholder="20 цифр" />
+              </tui-input>
+              <tui-error formControlName="checkingAccount" [error]="[] | tuiFieldError | async"></tui-error>
+            </ng-container>
+
+          </ng-container>
         </div>
       </tui-scrollbar>
 
-      <!-- Кнопки управления формой заказа -->
+      <!-- 3. Кнопки управления -->
       <div class="form-buttons">
         <button tuiButton type="button" (click)="prevStep()">Назад</button>
-        <!-- Если данные клиента изменены, показываем кнопку "Сохранить данные клиента" -->
-        <button tuiButton appearance="outline" *ngIf="getCurrentForm().dirty" type="button"
+
+        <!-- Сохранить данные клиента, если форма изменена -->
+        <button tuiButton appearance="outline" *ngIf="orderForm.get('data')!.dirty" type="button"
           (click)="updateClientData()">
           Сохранить данные клиента
         </button>
-        <button tuiButton type="submit" [disabled]="getCurrentForm().invalid">
+
+        <!-- Оформить заказ -->
+        <button tuiButton type="submit" [disabled]="orderForm.get('data')!.invalid || isLoading">
           Оформить заказ
         </button>
       </div>
     </form>
   </div>
 
-<div *ngSwitchCase="2" class="confirmation-wrapper">
-  <div class="confirmation-box">
-    <div class="confirmation-icon">
-      <tui-svg src="tuiIconCheckLarge" size="6xl"></tui-svg>
-    </div>
-    <h2 class="confirmation-title">Спасибо за заказ!</h2>
-    <p class="confirmation-text">
-      Ваш заказ № <strong>{{ orderNumber }}</strong><br />
-      успешно оформлен.
-    </p>
-    <div class="confirmation-actions">
-      <button tuiButton appearance="primary" (click)="goHome()">На главную</button>
+  <div *ngSwitchCase="2" class="confirmation-wrapper">
+    <div class="confirmation-box">
+      <div class="confirmation-icon">
+        <tui-svg src="tuiIconCheckLarge" size="6xl"></tui-svg>
+      </div>
+      <h2 class="confirmation-title">Спасибо за заказ!</h2>
+      <p class="confirmation-text">
+        Ваш заказ № <strong>{{ orderNumber }}</strong><br />
+        успешно оформлен.
+      </p>
+      <div class="confirmation-actions">
+        <button tuiButton appearance="primary" (click)="goHome()">На главную</button>
+      </div>
     </div>
   </div>
-</div>
 
-<ng-template #actionsTpl let-content="content">
-  <a download tuiButton size="m" [href]="content">Скачать</a>
-</ng-template>
+  <ng-template #actionsTpl let-content="content">
+    <a download tuiButton size="m" [href]="content">Скачать</a>
+  </ng-template>

@@ -7,7 +7,12 @@ import {
   Inject,
   TemplateRef,
 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import {
   TuiAlertService,
@@ -17,7 +22,7 @@ import {
 import { StorageService } from '../_services/storage.service';
 import { BasketService } from '../_services/basket.service';
 import { Router } from '@angular/router';
-import { switchMap, of, forkJoin, take, map, delay } from 'rxjs';
+import { switchMap, of, forkJoin, take, map, delay, debounceTime } from 'rxjs';
 import {
   TUI_PROMPT,
   TuiFileLike,
@@ -59,15 +64,10 @@ export class BasketComponent implements OnInit {
   orderNumber: string = '';
   receiptPdfUrl: string = '';
 
-  // Для каждого типа клиента своя форма
-  individualForm: FormGroup;
-  enterpriserForm: FormGroup;
-  legalForm: FormGroup;
-  // Текущий тип клиента (для переключения)
-  clientType: ClientType = 'INDIVIDUALS';
+  orderForm!: FormGroup;
+  private readonly cache: Partial<Record<ClientType, FormGroup>> = {};
 
   isLoading = false;
-  // Сохраняем исходное значение формы для последующего сравнения
   private originalFormValue: string = '';
 
   // DaData токен
@@ -96,188 +96,195 @@ export class BasketComponent implements OnInit {
     @Inject(TuiPdfViewerService)
     private readonly pdfService: TuiPdfViewerService,
     @Inject(TUI_IS_MOBILE) private readonly isMobile: boolean,
-    private orderService: OrderService,
-  ) {
-    // Форма для физического лица
-    this.individualForm = this.fb.group({
-      clientType: ['INDIVIDUALS', Validators.required],
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-    });
-
-    // Форма для ИП
-    this.enterpriserForm = this.fb.group({
-      clientType: ['ENTERPRISER', Validators.required],
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-      ogrnip: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(15),
-          Validators.maxLength(15),
-        ],
-      ],
-      inn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(10),
-          Validators.maxLength(12),
-        ],
-      ],
-      checkingAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      registrationAddress: ['', Validators.required],
-    });
-
-    // Форма для юридического лица
-    this.legalForm = this.fb.group({
-      clientType: ['LEGAL', Validators.required],
-      // ФИО руководителя (общие поля)
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-      // Дополнительные поля для юрлица
-      fullNameOrganization: ['', Validators.required],
-      abbreviatedNameOrganization: ['', Validators.required],
-      inn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(10),
-          Validators.maxLength(12),
-        ],
-      ],
-      kpp: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(9),
-          Validators.maxLength(9),
-        ],
-      ],
-      ogrn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(13),
-          Validators.maxLength(13),
-        ],
-      ],
-      okpo: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(8),
-          Validators.maxLength(8),
-        ],
-      ],
-      legalAddress: ['', Validators.required],
-      fax: [''],
-      website: [''],
-      checkingAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      correspondentAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      bic: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(9),
-          Validators.maxLength(9),
-        ],
-      ],
-      bankName: ['', Validators.required],
-    });
-  }
+    private orderService: OrderService
+  ) {}
 
   ngOnInit(): void {
-    this.loadBasket();
-    this.loadClientDataIntoOrderForm();
-
-    this.basketService.getBasketItemCount();
-
-    // При изменении текущей формы сохраняем её значение в строку для сравнения
-    this.getCurrentForm().valueChanges.subscribe(() => {
-      const currentValue = JSON.stringify(this.getCurrentForm().value);
-      if (currentValue === this.originalFormValue) {
-        this.getCurrentForm().markAsPristine();
-      }
+    // 1) создаём форму
+    this.orderForm = this.fb.group({
+      clientType: new FormControl<ClientType>('INDIVIDUALS', { nonNullable: true }),
+      data:       this.getGroup('INDIVIDUALS'),
     });
+
+    // 2) переключение типа
+    this.orderForm.get('clientType')!.valueChanges
+      .subscribe(t => {
+        this.orderForm.setControl('data', this.getGroup(t));
+        this.setupDirtyTracker(); // перезапустить трекер на новую группу
+      });
+
+    // 3) сразу настроить трекер
+    this.setupDirtyTracker();
+
+    // 4) загрузить данные и корзину
+    this.loadClientDataIntoOrderForm();
+    this.loadBasket();
   }
 
-  // Метод для выбора текущей формы в зависимости от clientType
-  getCurrentForm(): FormGroup {
-    switch (this.clientType) {
+  private setupDirtyTracker() {
+    const dataCtrl = this.orderForm.get('data') as FormGroup;
+
+    dataCtrl.valueChanges
+      .pipe(debounceTime(50))
+      .subscribe(() => {
+        const now = JSON.stringify(dataCtrl.value);
+        if (now === this.originalFormValue) {
+          dataCtrl.markAsPristine();
+        } else {
+          dataCtrl.markAsDirty();
+        }
+      });
+  }
+
+  /** Возвращает или создаёт кешированную под-группу */
+  private getGroup(type: ClientType): FormGroup {
+    if (!this.cache[type]) {
+      this.cache[type] = this.buildGroup(type);
+    }
+    return this.cache[type]!;
+  }
+
+  /** Построить FormGroup с тем же набором контролов и валидаторов */
+  private buildGroup(type: ClientType): FormGroup {
+    switch (type) {
       case 'INDIVIDUALS':
-        return this.individualForm;
+        return this.fb.group({
+          lastName: ['', Validators.required,],
+          firstName: ['', Validators.required],
+          middleName: [''],
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+        });
+
       case 'ENTERPRISER':
-        return this.enterpriserForm;
+        return this.fb.group({
+          lastName: ['', Validators.required],
+          firstName: ['', Validators.required],
+          middleName: [''],
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+          ogrnip: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(15),
+              Validators.maxLength(15),
+            ],
+          ],
+          inn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(10),
+              Validators.maxLength(12),
+            ],
+          ],
+          checkingAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          registrationAddress: ['', Validators.required],
+        });
+
       case 'LEGAL':
-        return this.legalForm;
-      default:
-        return this.individualForm;
+        return this.fb.group({
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+          fullNameOrganization: ['', Validators.required],
+          abbreviatedNameOrganization: ['', Validators.required],
+          inn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(10),
+              Validators.maxLength(12),
+            ],
+          ],
+          kpp: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(9),
+              Validators.maxLength(9),
+            ],
+          ],
+          ogrn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(13),
+              Validators.maxLength(13),
+            ],
+          ],
+          okpo: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(8),
+              Validators.maxLength(8),
+            ],
+          ],
+          legalAddress: ['', Validators.required],
+          fax: [''],
+          website: [''],
+          checkingAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          correspondentAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          bic: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(9),
+              Validators.maxLength(9),
+            ],
+          ],
+          bankName: ['', Validators.required],
+        });
     }
   }
 
@@ -416,76 +423,75 @@ export class BasketComponent implements OnInit {
       .reduce((sum, item) => sum + item.cost, 0);
   }
 
+  private mapFromServer(type: ClientType, src: any): Record<string, any> {
+    switch (type) {
+      case 'INDIVIDUALS':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+        };
+      case 'ENTERPRISER':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+          ogrnip: src.ogrnip ?? src.OGRNIP,
+          inn: src.inn ?? src.INN,
+          checkingAccount: src.paymentAccount,
+          registrationAddress: src.registrationAddress,
+        };
+      case 'LEGAL':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+          fullNameOrganization: src.fullNameOrganization,
+          abbreviatedNameOrganization: src.abbreviatedNameOrganization,
+          inn: src.inn ?? src.INN,
+          kpp: src.kpp ?? src.KPP,
+          ogrn: src.ogrn ?? src.OGRN,
+          okpo: src.okpo ?? src.OKPO,
+          legalAddress: src.legalAddress,
+          fax: src.faxNumber,
+          website: src.linkToWebsite,
+          checkingAccount: src.paymentAccount,
+          correspondentAccount: src.correspondentAccount,
+          bic: src.BIC,
+          bankName: src.bankName,
+        };
+    }
+  }
+
   // Загрузка данных клиента из ЛК и подстановка в форму заказа
   loadClientDataIntoOrderForm(): void {
     const user = this.storageService.getUser();
-    if (!user || !user.uuid) return;
-    this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe({
-      next: (data) => {
-        if (!data) return;
-        this.clientType = data.clientType || 'INDIVIDUALS';
-        // Заполняем нужную форму
-        if (this.clientType === 'INDIVIDUALS') {
-          this.individualForm.patchValue({
-            clientType: data.clientType || 'INDIVIDUALS',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-          });
-          this.originalFormValue = JSON.stringify(this.individualForm.value);
-          this.individualForm.markAsPristine();
-        } else if (this.clientType === 'ENTERPRISER') {
-          this.enterpriserForm.patchValue({
-            clientType: data.clientType || 'ENTERPRISER',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-            ogrnip: data.ogrnip || data.OGRNIP || '',
-            inn: data.inn || data.INN || '',
-            checkingAccount: data.paymentAccount || '',
-            registrationAddress: data.registrationAddress || '',
-          });
-          this.originalFormValue = JSON.stringify(this.enterpriserForm.value);
-          this.enterpriserForm.markAsPristine();
-        } else if (this.clientType === 'LEGAL') {
-          this.legalForm.patchValue({
-            clientType: data.clientType || 'LEGAL',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-            fullNameOrganization: data.fullNameOrganization || '',
-            abbreviatedNameOrganization: data.abbreviatedNameOrganization || '',
-            inn: data.inn || data.INN || '',
-            kpp: data.kpp || data.KPP || '',
-            ogrn: data.ogrn || data.OGRN || '',
-            okpo: data.okpo || data.OKPO || '',
-            legalAddress: data.legalAddress || '',
-            fax: data.faxNumber || '',
-            website: data.linkToWebsite || '',
-            checkingAccount: data.paymentAccount || '',
-            correspondentAccount: data.correspondentAccount || '',
-            bic: data.BIC || '',
-            bankName: data.bankName || '',
-          });
-          this.originalFormValue = JSON.stringify(this.legalForm.value);
-          this.legalForm.markAsPristine();
-        }
-      },
-      error: (err) => {
-        console.error('Ошибка загрузки данных клиента:', err);
-      },
-    });
+    if (!user?.uuid) return;
+
+    this.http.get<any>(`/api/client/?uuid=${user.uuid}`)
+      .subscribe({
+        next: data => {
+          const t = data.clientType as ClientType;
+          this.orderForm.patchValue({ clientType: t });
+          this.getGroup(t).patchValue(this.mapFromServer(t, data));
+
+          //  — сохраняем шаблонный JSON
+          const dataCtrl = this.orderForm.get('data')!;
+          this.originalFormValue = JSON.stringify(dataCtrl.value);
+          dataCtrl.markAsPristine();
+        },
+      });
   }
 
   // Сохранение обновленных данных клиента из формы заказа
   updateClientData(): void {
-    const currentForm = this.getCurrentForm();
+    const currentForm = this.orderForm.get('data')!;
     if (currentForm.invalid) {
       this.alertService
         .open('Проверьте правильность заполнения полей', {
@@ -498,7 +504,7 @@ export class BasketComponent implements OnInit {
     if (!user || !user.uuid) return;
     const body = {
       uuid: user.uuid,
-      // Остальные поля берутся из текущей формы
+      clientType: this.orderForm.get('clientType')!.value,
       ...currentForm.value,
     };
 
@@ -555,52 +561,63 @@ export class BasketComponent implements OnInit {
   }
 
   placeOrder(): void {
+    const type = this.orderForm.get('clientType')!.value as ClientType;
+    const dto = this.orderForm.get('data')!.value;
+
     const payload = {
-      services_uuids: this.basketData.filter(i => i.selected).map(i => i.basketUuid),
-      dtoInput:       this.getCurrentForm().value,
-      clientType:     this.clientType,
+      services_uuids: this.basketData
+        .filter((i) => i.selected)
+        .map((i) => i.basketUuid),
+      clientType: type,
+      dtoInput: dto,
     };
-  
-    this.basketService.createOrder(payload).pipe(
-      // 1) достаём чистый UUID
-      map((msg: string) => msg.split(':')[1].trim()),
-      delay(300),
-      // 2) сохраняем UUID и запрашиваем детали заказа
-      switchMap(uuid => {
-        this.orderUuid = uuid;
-        return this.orderService.getOrderDetails(uuid);
-      }),
-      // 3) сохраняем бизнес-номер и загружаем PDF
-      switchMap(order => {
-        this.orderNumber = order.orderNumber;
-        return this.basketService.getReceiptPdf(this.orderUuid);
-      })
-    ).subscribe({
-      next: (blob: Blob) => {
-        const url  = URL.createObjectURL(blob);
-        const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-        this.pdfService.open(safe, {
-          label: `Счёт №${this.orderNumber}`,
-          actions: this.actionsTpl,
-        }).subscribe();
-  
-        // очищаем корзину и обновляем счётчик
-        this.currentStep = 2;
-        this.basketData = [];
-        this.totalAmount = 0;
-        this.basketService.getBasketItemCount();
-      },
-      error: err => {
-        console.error(err);
-        this.alertService.open('Ошибка оформления заказа', { status: 'error' }).subscribe();
-      }
-    });
+
+    this.basketService
+      .createOrder(payload)
+      .pipe(
+        // 1) достаём чистый UUID
+        map((msg: string) => msg.split(':')[1].trim()),
+        delay(300),
+        // 2) сохраняем UUID и запрашиваем детали заказа
+        switchMap((uuid) => {
+          this.orderUuid = uuid;
+          return this.orderService.getOrderDetails(uuid);
+        }),
+        // 3) сохраняем бизнес-номер и загружаем PDF
+        switchMap((order) => {
+          this.orderNumber = order.orderNumber;
+          return this.basketService.getReceiptPdf(this.orderUuid);
+        })
+      )
+      .subscribe({
+        next: (blob: Blob) => {
+          const url = URL.createObjectURL(blob);
+          const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+          this.pdfService
+            .open(safe, {
+              label: `Счёт №${this.orderNumber}`,
+              actions: this.actionsTpl,
+            })
+            .subscribe();
+
+          // очищаем корзину и обновляем счётчик
+          this.currentStep = 2;
+          this.basketData = [];
+          this.totalAmount = 0;
+          this.basketService.getBasketItemCount();
+        },
+        error: (err) => {
+          console.error(err);
+          this.alertService
+            .open('Ошибка оформления заказа', { status: 'error' })
+            .subscribe();
+        },
+      });
   }
-  
 
   // Автодополнение DaData для компании (ИНН, наименование)
   onCompanyNameInput(query: string): void {
-    const type = this.clientType;
+    const type = this.orderForm.get('clientType')!.value as ClientType;
     if ((type !== 'ENTERPRISER' && type !== 'LEGAL') || !query.trim()) {
       this.showCompanySuggestions = false;
       this.companySuggestions = [];
@@ -632,7 +649,7 @@ export class BasketComponent implements OnInit {
   selectCompanySuggestion(sugg: any): void {
     this.showCompanySuggestions = false;
     const data = sugg.data;
-    this.getCurrentForm().patchValue({
+    this.orderForm.get('data')!.patchValue({
       inn: data.inn || '',
       kpp: data.kpp || '',
       ogrn: data.ogrn || '',
@@ -643,11 +660,14 @@ export class BasketComponent implements OnInit {
       registrationAddress: data.address?.value || '',
       okpo: data.okpo || '',
     });
+  this.orderForm.markAsDirty();
+  this.orderForm.markAllAsTouched();
+  this.orderForm.updateValueAndValidity();
   }
 
   // Автодополнение DaData для банка
   onBankInput(query: string): void {
-    const type = this.clientType;
+    const type = this.orderForm.get('clientType')!.value as ClientType;
     if (!query.trim() || type === 'INDIVIDUALS') {
       this.bankSuggestions = [];
       this.showBankSuggestions = false;
@@ -679,11 +699,15 @@ export class BasketComponent implements OnInit {
   selectBankSuggestion(sugg: any): void {
     this.showBankSuggestions = false;
     const data = sugg.data;
-    this.getCurrentForm().patchValue({
+    this.orderForm.get('data')!.patchValue({
       bankName: data.name?.payment || data.name?.full || '',
       bic: data.bic || '',
       correspondentAccount: data.correspondent_account || '',
     });
+
+  this.orderForm.markAsDirty();
+  this.orderForm.markAllAsTouched();
+  this.orderForm.updateValueAndValidity();
   }
 
   nextStep(): void {

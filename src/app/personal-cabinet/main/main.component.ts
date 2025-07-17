@@ -1,306 +1,313 @@
-
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { TuiAlertService, TuiNotification } from '@taiga-ui/core';
 import { StorageService } from '../../_services/storage.service';
 import { ConfigService } from '../../config.service';
+import { debounceTime } from 'rxjs';
 
 export type ClientType = 'INDIVIDUALS' | 'ENTERPRISER' | 'LEGAL';
- 
+
 @Component({
   selector: 'main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss'],
 })
 export class MainComponent implements OnInit {
-  // Для каждого типа клиента своя форма
-  individualForm: FormGroup;
-  enterpriserForm: FormGroup;
-  legalForm: FormGroup;
-  // Текущий тип клиента (для переключения)
-  clientType: ClientType = 'INDIVIDUALS';
+  form!: FormGroup;
+
+  private originalDataJson = '';
 
   isLoading = false;
-  // Сохраняем исходное значение формы для последующего сравнения
-  private originalFormValue: string = '';
 
-  // DaData токен
   private readonly DADATA_API_TOKEN = this.configService.getDadataToken();
 
-  // Подсказки DaData для компании и банка
   companySuggestions: any[] = [];
   showCompanySuggestions = false;
   bankSuggestions: any[] = [];
   showBankSuggestions = false;
 
+  // 1) кеш под-форм
+  private readonly cache: Partial<Record<ClientType, FormGroup>> = {};
+
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
     private storageService: StorageService,
-    private alerts: TuiAlertService, 
+    private alerts: TuiAlertService,
     private configService: ConfigService
-  ) {
-    // Форма для физического лица
-    this.individualForm = this.fb.group({
-      clientType: ['INDIVIDUAL', Validators.required],
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-    });
-
-    // Форма для ИП
-    this.enterpriserForm = this.fb.group({
-      clientType: ['ENTERPRISER', Validators.required],
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-      ogrnip: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(15),
-          Validators.maxLength(15),
-        ],
-      ],
-      inn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(10),
-          Validators.maxLength(12),
-        ],
-      ],
-      checkingAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      registrationAddress: ['', Validators.required],
-    });
-
-    // Форма для юридического лица
-    this.legalForm = this.fb.group({
-      clientType: ['LEGAL', Validators.required],
-      // ФИО руководителя (общие поля)
-      lastName: ['', Validators.required],
-      firstName: ['', Validators.required],
-      middleName: [''],
-      phone: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(
-            /^(\+7|8)\s?[\(]?\d{3}[\)]?\s?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/
-          ),
-        ],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-      // Дополнительные поля для юрлица
-      fullNameOrganization: ['', Validators.required],
-      abbreviatedNameOrganization: ['', Validators.required],
-      inn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(10),
-          Validators.maxLength(12),
-        ],
-      ],
-      kpp: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(9),
-          Validators.maxLength(9),
-        ],
-      ],
-      ogrn: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(13),
-          Validators.maxLength(13),
-        ],
-      ],
-      okpo: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(8),
-          Validators.maxLength(8),
-        ],
-      ],
-      legalAddress: ['', Validators.required],
-      fax: [''],
-      website: [''],
-      checkingAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      correspondentAccount: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(20),
-          Validators.maxLength(20),
-        ],
-      ],
-      bic: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d+$/),
-          Validators.minLength(9),
-          Validators.maxLength(9),
-        ],
-      ],
-      bankName: ['', Validators.required],
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
-    // Загрузка данных с сервера (при этом выбирается нужная форма)
-    this.loadClientData();
-
-    // При изменении текущей формы сохраняем её значение в строку для сравнения
-    this.getCurrentForm().valueChanges.subscribe(() => {
-      const currentValue = JSON.stringify(this.getCurrentForm().value);
-      if (currentValue === this.originalFormValue) {
-        this.getCurrentForm().markAsPristine();
-      }
+    this.form = this.fb.group({
+      clientType: new FormControl<ClientType>('INDIVIDUALS'),
+      data: this.getGroup('INDIVIDUALS'),
     });
+
+    const ctl = this.form.get('clientType') as FormControl<ClientType>;
+    ctl.valueChanges.subscribe((type: ClientType) => {
+      // 2) при переключении берём из кеша, а не создаём заново
+      this.form.setControl('data', this.getGroup(type));
+      this.setupDirtyTracking(); 
+    });
+
+    this.loadClientData();
   }
 
-  // Метод для выбора текущей формы в зависимости от clientType
-  getCurrentForm(): FormGroup {
-    switch (this.clientType) {
+  private setupDirtyTracking() {
+    // отписаться от предыдущих подписок, если нужно
+    this.dataGroup.valueChanges
+      .pipe(debounceTime(50))   // чтобы не гонять слишком часто
+      .subscribe(() => {
+        const now = JSON.stringify(this.dataGroup.value);
+        if (now === this.originalDataJson) {
+          this.dataGroup.markAsPristine();
+        } else {
+          this.dataGroup.markAsDirty();
+        }
+      });
+  }
+
+  /** Доступ к текущей под-группе */
+  get dataGroup(): FormGroup {
+    return this.form.get('data') as FormGroup;
+  }
+
+  /** Возвращает одну и ту же группу для каждого типа */
+  private getGroup(type: ClientType): FormGroup {
+    if (!this.cache[type]) {
+      // на первом вызове — создаём и кладём в кеш
+      this.cache[type] = this.buildGroup(type);
+    }
+    return this.cache[type]!;
+  }
+
+  /** Строит форму по типу клиента */
+  private buildGroup(type: ClientType): FormGroup {
+    switch (type) {
       case 'INDIVIDUALS':
-        return this.individualForm;
+        return this.fb.group({
+          lastName: ['', Validators.required,],
+          firstName: ['', Validators.required],
+          middleName: [''],
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+        });
+
       case 'ENTERPRISER':
-        return this.enterpriserForm;
+        return this.fb.group({
+          lastName: ['', Validators.required],
+          firstName: ['', Validators.required],
+          middleName: [''],
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+          ogrnip: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(15),
+              Validators.maxLength(15),
+            ],
+          ],
+          inn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(10),
+              Validators.maxLength(12),
+            ],
+          ],
+          checkingAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          registrationAddress: ['', Validators.required],
+        });
+
       case 'LEGAL':
-        return this.legalForm;
-      default:
-        return this.individualForm;
+        return this.fb.group({
+          phone: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^(\+7|8)\d{10}$/),
+            ],
+          ],
+          email: ['', [Validators.required, Validators.email]],
+          fullNameOrganization: ['', Validators.required],
+          abbreviatedNameOrganization: ['', Validators.required],
+          inn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(10),
+              Validators.maxLength(12),
+            ],
+          ],
+          kpp: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(9),
+              Validators.maxLength(9),
+            ],
+          ],
+          ogrn: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(13),
+              Validators.maxLength(13),
+            ],
+          ],
+          okpo: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(8),
+              Validators.maxLength(8),
+            ],
+          ],
+          legalAddress: ['', Validators.required],
+          fax: [''],
+          website: [''],
+          checkingAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          correspondentAccount: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(20),
+              Validators.maxLength(20),
+            ],
+          ],
+          bic: [
+            '',
+            [
+              Validators.required,
+              Validators.pattern(/^\d+$/),
+              Validators.minLength(9),
+              Validators.maxLength(9),
+            ],
+          ],
+          bankName: ['', Validators.required],
+        });
     }
   }
-
-  // Загрузка данных клиента с сервера
-  loadClientData(): void {
+  
+  /** Загрузка из API */
+  private loadClientData(): void {
     const user = this.storageService.getUser();
-    if (!user || !user.uuid) {
-      console.error('UUID пользователя не найден.');
-      return;
-    }
+    if (!user?.uuid) return;
+
     this.http.get<any>(`/api/client/?uuid=${user.uuid}`).subscribe({
       next: (data) => {
-        // Определяем тип клиента из данных
-        this.clientType = data.clientType || 'INDIVIDUALS';
-        // Заполняем нужную форму
-        if (this.clientType === 'INDIVIDUALS') {
-          this.individualForm.patchValue({
-            clientType: data.clientType || 'INDIVIDUALS',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-          });
-          this.originalFormValue = JSON.stringify(this.individualForm.value);
-          this.individualForm.markAsPristine();
-        } else if (this.clientType === 'ENTERPRISER') {
-          this.enterpriserForm.patchValue({
-            clientType: data.clientType || 'ENTERPRISER',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-            ogrnip: data.ogrnip || data.OGRNIP || '',
-            inn: data.inn || data.INN || '',
-            checkingAccount: data.paymentAccount || '',
-            registrationAddress: data.registrationAddress || '',
-          });
-          this.originalFormValue = JSON.stringify(this.enterpriserForm.value);
-          this.enterpriserForm.markAsPristine();
-        } else if (this.clientType === 'LEGAL') {
-          this.legalForm.patchValue({
-            clientType: data.clientType || 'LEGAL',
-            lastName: data.lastName || '',
-            firstName: data.firstName || '',
-            middleName: data.middleName || '',
-            phone: data.phone || '',
-            email: data.email || '',
-            fullNameOrganization: data.fullNameOrganization || '',
-            abbreviatedNameOrganization: data.abbreviatedNameOrganization || '',
-            inn: data.inn || data.INN || '',
-            kpp: data.kpp || data.KPP || '',
-            ogrn: data.ogrn || data.OGRN || '',
-            okpo: data.okpo || data.OKPO || '',
-            legalAddress: data.legalAddress || '',
-            fax: data.faxNumber || '',
-            website: data.linkToWebsite || '',
-            checkingAccount: data.paymentAccount || '',
-            correspondentAccount: data.correspondentAccount || '',
-            bic: data.BIC || '',
-            bankName: data.bankName || '',
-          });
-          this.originalFormValue = JSON.stringify(this.legalForm.value);
-          this.legalForm.markAsPristine();
-        }
+        const type = (data.clientType as ClientType) ?? 'INDIVIDUALS';
+
+        // а) переключаем корневой clientType (сменит dataGroup)
+        this.form.patchValue({ clientType: type });
+
+        // б) патчим кешированную группу
+        const payload = this.mapFromServer(type, data);
+        this.getGroup(type).patchValue(payload);
+
+        this.originalDataJson = JSON.stringify(this.dataGroup.value);
+        this.dataGroup.markAsPristine();
       },
-      error: (err) => {
-        console.error('Ошибка при получении данных клиента:', err);
-      },
+      error: (err) => console.error(err),
     });
   }
 
-  // Сброс изменений – вернуть значения из базы (можно повторно вызвать loadClientData)
+  private mapFromServer(type: ClientType, src: any): Record<string, any> {
+    switch (type) {
+      case 'INDIVIDUALS':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+        };
+      case 'ENTERPRISER':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+          ogrnip: src.ogrnip ?? src.OGRNIP,
+          inn: src.inn ?? src.INN,
+          checkingAccount: src.paymentAccount,
+          registrationAddress: src.registrationAddress,
+        };
+      case 'LEGAL':
+        return {
+          lastName: src.lastName,
+          firstName: src.firstName,
+          middleName: src.middleName,
+          phone: src.phone,
+          email: src.email,
+          fullNameOrganization: src.fullNameOrganization,
+          abbreviatedNameOrganization: src.abbreviatedNameOrganization,
+          inn: src.inn ?? src.INN,
+          kpp: src.kpp ?? src.KPP,
+          ogrn: src.ogrn ?? src.OGRN,
+          okpo: src.okpo ?? src.OKPO,
+          legalAddress: src.legalAddress,
+          fax: src.faxNumber,
+          website: src.linkToWebsite,
+          checkingAccount: src.paymentAccount,
+          correspondentAccount: src.correspondentAccount,
+          bic: src.BIC,
+          bankName: src.bankName,
+        };
+    }
+  }
+
+  /** Сброс к серверным данным */
   onReset(): void {
     this.loadClientData();
   }
 
-  // Сохранение изменений в личном кабинете
+  /** Сохранение */
   onSave(): void {
-    const currentForm = this.getCurrentForm();
-    if (currentForm.invalid) {
+    if (this.dataGroup.invalid) {
       this.alerts
         .open('Проверьте правильность заполнения полей', {
           status: TuiNotification.Error,
@@ -309,19 +316,17 @@ export class MainComponent implements OnInit {
       return;
     }
     const user = this.storageService.getUser();
-    if (!user || !user.uuid) {
-      console.error('UUID пользователя не найден.');
-      return;
-    }
-    const body = {
+    if (!user?.uuid) return;
+
+    const payload = {
       uuid: user.uuid,
-      // Остальные поля берутся из текущей формы
-      ...currentForm.value,
+      clientType: this.form.value.clientType,
+      ...this.dataGroup.value,
     };
 
     this.isLoading = true;
     this.http
-      .put('/api/client/update', body, { responseType: 'text' })
+      .put('/api/client/update', payload, { responseType: 'text' })
       .subscribe({
         next: () => {
           this.isLoading = false;
@@ -330,24 +335,23 @@ export class MainComponent implements OnInit {
               status: TuiNotification.Success,
             })
             .subscribe();
-          this.originalFormValue = JSON.stringify(currentForm.value);
-          currentForm.markAsPristine();
+          this.dataGroup.markAsPristine();
         },
         error: (err) => {
           this.isLoading = false;
-          console.error('Ошибка при обновлении клиента:', err);
           this.alerts
             .open('Ошибка при сохранении данных', {
               status: TuiNotification.Error,
             })
             .subscribe();
+          console.error(err);
         },
       });
   }
 
   // Автодополнение DaData для поиска компании (для ИП и ЮЛ)
   onCompanyNameInput(query: string): void {
-    const type = this.clientType;
+    const type = this.form.get('clientType')!.value as ClientType;
     if ((type !== 'ENTERPRISER' && type !== 'LEGAL') || !query.trim()) {
       this.showCompanySuggestions = false;
       this.companySuggestions = [];
@@ -381,7 +385,7 @@ export class MainComponent implements OnInit {
     this.showCompanySuggestions = false;
     const data = sugg.data;
     // Заполняем поля, если они предусмотрены для ИП/ЮЛ
-    this.getCurrentForm().patchValue({
+    this.dataGroup.patchValue({
       inn: data.inn || '',
       kpp: data.kpp || '',
       ogrn: data.ogrn || '',
@@ -392,11 +396,14 @@ export class MainComponent implements OnInit {
       registrationAddress: data.address?.value || '',
       okpo: data.okpo || '',
     });
+    this.dataGroup.markAsDirty();       
+    this.dataGroup.markAllAsTouched();   
+    this.dataGroup.updateValueAndValidity();
   }
 
   // Автодополнение DaData для банка
   onBankInput(query: string): void {
-    const type = this.clientType;
+    const type = this.form.get('clientType')!.value as ClientType;
     if (!query || !query.trim() || type === 'INDIVIDUALS') {
       this.bankSuggestions = [];
       this.showBankSuggestions = false;
@@ -428,10 +435,14 @@ export class MainComponent implements OnInit {
   selectBankSuggestion(sugg: any): void {
     this.showBankSuggestions = false;
     const data = sugg.data;
-    this.getCurrentForm().patchValue({
+    this.dataGroup.patchValue({
       bankName: data.name?.payment || data.name?.full || '',
       bic: data.bic || '',
       correspondentAccount: data.correspondent_account || '',
     });
+
+  this.dataGroup.markAsDirty();
+  this.dataGroup.markAllAsTouched();
+  this.dataGroup.updateValueAndValidity();
   }
 }
